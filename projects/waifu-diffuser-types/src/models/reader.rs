@@ -1,26 +1,38 @@
 use super::*;
-use diagnostic_quick::{QError, QResult};
+use diagnostic_quick::QResult;
 use sevenz_rust::{Error, Password, SevenZArchiveEntry, SevenZReader, SevenZWriter};
-use std::{fs::File, io::Read};
+use std::fs::{create_dir_all, File};
 
 impl DiffuserModel {
     pub fn load<P: AsRef<Path>>(file: P) -> QResult<Self> {
-        let path = file.as_ref().canonicalize()?;
+        let path = file.as_ref();
         let buffer = load_part(&path, "meta.json")?;
         let kind: ModelKind = serde_json5::from_slice(&buffer).unwrap();
-        Ok(DiffuserModel { kind, path })
+        Ok(DiffuserModel { kind, path: path.canonicalize()? })
     }
     pub fn save_meta<P: AsRef<Path>>(&self, path: P) -> QResult<usize> {
-        let path = path.as_ref().canonicalize()?;
+        let path = path.as_ref();
+        if let Some(s) = path.parent() {
+            create_dir_all(s)?
+        }
         let buffer = serde_json5::to_string(&self.kind).unwrap();
-        if path.exists() {
-            if overwrite { SevenZWriter::new(File::open(path)?) } else { Err(QError::runtime_error("File already exists"))? }
-        }
-        else {
-            SevenZWriter::create(path).unwrap()
-        }
-
-        let mut writer = SevenZWriter::create(path).unwrap();
+        let mut writer = create_writer(path).unwrap();
+        let mut entry = SevenZArchiveEntry::default();
+        entry.name = "meta.json".to_string();
+        entry.has_stream = true;
+        writer.push_archive_entry(entry, Some(buffer.as_bytes())).unwrap();
+        writer.finish().unwrap();
+        Ok(buffer.len())
+    }
+    pub fn save_model<P: AsRef<Path>>(&self, path: P, buffer: &[u8]) -> QResult<usize> {
+        let path = path.as_ref();
+        let mut writer = create_writer(path).unwrap();
+        let mut entry = SevenZArchiveEntry::default();
+        entry.name = "model.safetensors".to_string();
+        entry.has_stream = true;
+        writer.push_archive_entry(entry, Some(buffer)).unwrap();
+        writer.finish().unwrap();
+        Ok(0)
     }
 }
 
@@ -51,17 +63,23 @@ fn load_part(path: &Path, file_name: &str) -> QResult<Vec<u8>> {
     Ok(buffer)
 }
 
+fn create_writer(path: &Path) -> Result<SevenZWriter<File>, Error> {
+    if path.exists() {
+        match File::open(path) {
+            Ok(o) => SevenZWriter::new(o),
+            Err(e) => Err(Error::io(e)),
+        }
+    }
+    else {
+        SevenZWriter::create(path)
+    }
+}
+
 #[test]
 fn test_writer() {
-    let mut writer = SevenZWriter::create("test.7z").unwrap();
-    // let entry = SevenZArchiveEntry::
-    let buffer = b"[]".as_slice();
-
-    let mut entry = SevenZArchiveEntry::default();
-    entry.name = "meta.json".to_string();
-
-    writer.push_archive_entry(entry, Some(buffer)).unwrap();
-    writer.finish().unwrap()
+    let model =
+        DiffuserModel { kind: ModelKind::Clip(Box::new(ClipModel { name: "official".to_string() })), path: Default::default() };
+    model.save_meta("test.diffuser").unwrap();
 }
 
 #[test]
