@@ -13,7 +13,9 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0.130", features = ["derive"] }
 diffusers = "0.2.1"
-sevenz-rust = "0.2.0"
+sevenz-rust = { version = "0.2.0", features = ["compress"] }
+serde_json5 = "0.1.0"
+diagnostic-quick = "0.3.6"
 
 [dev-dependencies]
 
