@@ -1,49 +1,46 @@
-use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
+use image::DynamicImage;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum ModelKind {
-    /// A VAE model used for stable diffusion 1.
-    Vae,
-    /// A VAE model used for stable diffusion 2.
-    Vae2,
-    /// A U-Net model used for stable diffusion 1.
-    UNet,
-    /// A U-Net model used for stable diffusion 2.
-    Clip,
-    /// A CLIP model used for stable diffusion 2.
-    Clip2,
+use pyke_diffusers::{ArenaExtendStrategy, CUDADeviceOptions, CuDNNConvolutionAlgorithmSearch, DiffusionDevice, DiffusionDeviceControl, EulerDiscreteScheduler, OrtEnvironment, SchedulerOptimizedDefaults, StableDiffusionCallback, StableDiffusionOptions, StableDiffusionPipeline, StableDiffusionTxt2ImgOptions};
+
+fn main() -> anyhow::Result<()> {
+    let environment = OrtEnvironment::default().into_arc();
+    let mut scheduler = EulerDiscreteScheduler::stable_diffusion_v1_optimized_default()?;
+    let cuda = DiffusionDevice::CUDA(
+        0,
+        Some(CUDADeviceOptions {
+            memory_limit: None,
+            arena_extend_strategy: Some(ArenaExtendStrategy::SameAsRequested),
+            cudnn_conv_algorithm_search: Some(CuDNNConvolutionAlgorithmSearch::Exhaustive),
+        }),
+    );
+    let pipeline = StableDiffusionPipeline::new(
+        &environment,
+        "./pyke-diffusers-sd15-fp16/",
+        StableDiffusionOptions {
+            devices: DiffusionDeviceControl {
+                unet: cuda.clone(),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )?;
+
+    let imgs = pipeline.txt2img("rust robot holding a torch", &mut scheduler, StableDiffusionTxt2ImgOptions {
+        steps: 21,
+        negative_prompt: None,
+        callback: Some(StableDiffusionCallback::ApproximateDecoded {
+            frequency: 3,
+            cb: Box::new(save_image),
+        }),
+        ..Default::default()
+    })?;
+    imgs[0].to_rgb8().save("target/result.png")?;
+    Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum DiffuserModel {
-    /// A VAE model used for stable diffusion 1.
-    Vae,
-    /// A VAE model used for stable diffusion 2.
-    Vae2,
-    /// A U-Net model used for stable diffusion 1.
-    UNet,
-    /// A U-Net model used for stable diffusion 2.
-    Clip,
-    /// A CLIP model used for stable diffusion 2.
-    Clip2,
+fn save_image(index: usize, timestamp: f32, image: Vec<DynamicImage>) -> bool {
+    let image = image.first().unwrap();
+    println!("Generated {} images", index);
+    image.clone().into_rgb8().save(format!("target/result-{:03}.png", index)).unwrap();
+    true
 }
-
-impl DiffuserModel {
-    pub fn new(path: PathBuf) -> Self {
-        Self { kind: DiffuserModel::Clip, path }
-    }
-}
-
-pub struct ClipModel {
-    name: String,
-    path: PathBuf
-}
-
-impl ClipModel {
-    pub fn new(path: PathBuf) -> Self {
-        Self { name: "".to_string(), path }
-    }
-}
-
-

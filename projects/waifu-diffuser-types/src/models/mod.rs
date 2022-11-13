@@ -1,7 +1,7 @@
-use crate::{ClipModel, DDIMAdvance, DanBooruModel, UNetModel, VaeModel};
-use diffusers::pipelines::stable_diffusion::StableDiffusionConfig;
-use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use serde::{Deserialize, Serialize};
+
+use crate::{ClipModel, DanBooruModel, DDIMAdvance, UNetModel, VaeModel};
 
 pub mod clip;
 pub mod deep_dan_booru;
@@ -10,7 +10,7 @@ pub mod scheduler;
 pub mod unet;
 pub mod vae;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct DiffuserRunner {
     models: DiffuserModel,
     vae: Option<StableDiffusionConfig>,

@@ -78,17 +78,56 @@ fn create_writer(path: &Path) -> Result<SevenZWriter<File>, Error> {
 #[test]
 fn test_writer() {
     let model =
-        DiffuserModel { kind: ModelKind::Clip(Box::new(ClipModel { name: "official".to_string() })), path: Default::default() };
-    model.save_meta("test.diffuser").unwrap();
+        DiffuserModel { kind: ModelKind::Clip(Box::new(ClipModel::new("Grift".to_string(), "Gft".to_string()))), path: Default::default() };
+    model.save_meta("test.7z").unwrap();
 }
 
 #[test]
 fn test_writer2() {
-    let mut writer = SevenZWriter::new(File::open("test.7z").unwrap()).unwrap();
+    let mut writer = SevenZWriter::new(File::open("meta.7z").unwrap()).unwrap();
     let buffer = b"{}".as_slice();
     let mut entry = SevenZArchiveEntry::default();
     entry.name = "meta.json".to_string();
     entry.has_stream = true;
     writer.push_archive_entry(entry, Some(buffer)).unwrap();
     writer.finish().unwrap()
+}
+
+#[test]
+fn main() {
+    let sr = sevenz_rust::SevenZReader::open("meta.7z", "".into()).expect("ok");
+
+    let mut sw = sevenz_rust::SevenZWriter::create("meta-changed.7z").unwrap();
+
+    sr.decode_each_entries(|mut decoder| {
+        if decoder.entry().name() == "meta.json" {
+            let mut entry = SevenZArchiveEntry::default();
+            {
+                let old = decoder.entry();
+                entry.name = old.name.to_string();
+                entry.copy_date_from(old);
+            }
+            let mut content = String::new();
+            decoder
+                .decoded_reader()?
+                .read_to_string(&mut content)
+                .map_err(|e| sevenz_rust::Error::io(e))?;
+            content.push_str("\nmodified");
+
+            sw.push_archive_entry(entry, Some(content.as_bytes()))?;
+        } else {
+            let mut unpack_sizes: Vec<_> =
+                decoder.unpack_sizes().iter().map(|s| *s as usize).collect();
+
+            unpack_sizes.pop();
+            sw.push_encoded_entry(
+                decoder.entry().clone(),
+                unpack_sizes,
+                decoder.undecoded_reader()?,
+            )?;
+        }
+        Ok(true)
+    })
+        .expect("OK");
+    sw.finish().unwrap();
 }
