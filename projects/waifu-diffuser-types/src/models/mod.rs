@@ -6,7 +6,6 @@ use crate::{ClipModel, DanBooruModel, DDIMAdvance, UNetModel, VaeModel};
 pub mod clip;
 pub mod deep_dan_booru;
 mod reader;
-pub mod scheduler;
 pub mod unet;
 pub mod vae;
 
@@ -28,10 +27,7 @@ pub enum EncodingMode {
     Json,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum DiffuserScheduler {
-    DDIM(Box<DDIMAdvance>),
-}
+
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
