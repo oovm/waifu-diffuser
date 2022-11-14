@@ -1,48 +1,80 @@
-#[doc(hidden)]
-#[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
-const _: () = {
-    #[allow(unused_extern_crates, clippy::useless_attribute)]
-    extern crate serde as _serde;   #[allow(unused_macros)] macro_rules! try { ( $   __expr   :   expr   ) =>   { match   $   __expr   { _serde   ::   __private   ::   Ok   ( __val   ) =>   __val   ,   _serde   ::   __private   ::   Err   ( __err   ) =>   { return   _serde   ::   __private   ::   Err   ( __err   ) ;   } } } } #[automatically_derived]
-    impl<'de> _serde::Deserialize<'de> for DiffuserScheduler {
-        fn deserialize<__D>(__deserializer: __D) -> _serde::__private::Result<Self, __D::Error> where __D: _serde::Deserializer<'de>, {
-            #[allow(non_camel_case_types)]
-            enum __Field { __field0 }
-            struct __FieldVisitor;
-            impl<'de> _serde::de::Visitor<'de> for __FieldVisitor {
-                type Value = __Field;
-                fn expecting(&self, __formatter: &mut _serde::__private::Formatter) -> _serde::__private::fmt::Result { _serde::__private::Formatter::write_str(__formatter, "variant identifier") }
-                fn visit_u64<__E>(self, __value: u64) -> _serde::__private::Result<Self::Value, __E> where __E: _serde::de::Error, {
-                    match __value {
-                        0u64 => _serde::__private::Ok(__Field::__field0),
-                        _ => _serde::__private::Err(_serde::de::Error::invalid_value(_serde::de::Unexpected::Unsigned(__value), &"variant index 0 <= i < 1")),
-                    }
-                }
-                fn visit_str<__E>(self, __value: &str) -> _serde::__private::Result<Self::Value, __E> where __E: _serde::de::Error, {
-                    match __value {
-                        "DDIM" => _serde::__private::Ok(__Field::__field0),
-                        _ => { _serde::__private::Err(_serde::de::Error::unknown_variant(__value, VARIANTS)) }
-                    }
-                }
-                fn visit_bytes<__E>(self, __value: &[u8]) -> _serde::__private::Result<Self::Value, __E> where __E: _serde::de::Error, {
-                    match __value {
-                        b"DDIM" => _serde::__private::Ok(__Field::__field0),
-                        _ => {
-                            let __value = &_serde::__private::from_utf8_lossy(__value);
-                            _serde::__private::Err(_serde::de::Error::unknown_variant(__value, VARIANTS))
-                        }
-                    }
-                }
-            }
-            impl<'de> _serde::Deserialize<'de> for __Field {
-                #[inline]
-                fn deserialize<__D>(__deserializer: __D) -> _serde::__private::Result<Self, __D::Error> where __D: _serde::Deserializer<'de>, { _serde::Deserializer::deserialize_identifier(__deserializer, __FieldVisitor) }
-            }
-            const VARIANTS: &'static [&'static str] = &["DDIM"];
-            let __tagged = match (_serde::Deserializer::deserialize_any(__deserializer, _serde::__private::de::TaggedContentVisitor::<__Field>::new("type", "internally tagged enum DiffuserScheduler"))) {
-                _serde::__private::Ok(__val) => __val,
-                _serde::__private::Err(__err) => { return _serde::__private::Err(__err); }
-            };
-            match __tagged.tag { __Field::__field0 => _serde::__private::Result::map(<Box<DDIMScheduler> as _serde::Deserialize>::deserialize(_serde::__private::de::ContentDeserializer::<__D::Error>::new(__tagged.content)), DiffuserScheduler::DDIM), }
+use std::fmt::Formatter;
+
+use serde::{Deserialize, Deserializer};
+use serde::de::{Error, MapAccess, Visitor};
+
+use crate::schedulers::{DDIMScheduler, DiffuserScheduler, DiffuserSchedulerKind};
+
+struct SchedulerDeserializeVisitor {}
+
+impl<'de> Deserialize<'de> for DiffuserScheduler {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        const VARIANTS: &'static [&'static str] = &["Euler", "DDIM"];
+        let __tagged = match (Deserializer::deserialize_any(deserializer, _serde::__private::de::TaggedContentVisitor::<__Field>::new("type", "internally tagged enum DiffuserScheduler"))) {
+            Ok(__val) => __val,
+            Err(__err) => { return _serde::__private::Err(__err); }
+        };
+        match __tagged.tag {
+            __Field::__field0 => _serde::__private::Result::map(<Box<EulerScheduler> as _serde::Deserialize>::deserialize(_serde::__private::de::ContentDeserializer::<__D::Error>::new(__tagged.content)), DiffuserScheduler::Euler),
+            __Field::__field1 => _serde::__private::Result::map(<Box<DDIMScheduler> as _serde::Deserialize>::deserialize(_serde::__private::de::ContentDeserializer::<__D::Error>::new(__tagged.content)), DiffuserScheduler::DDIM),
         }
     }
-};
+}
+
+impl<'de> Deserialize<'de> for DiffuserSchedulerKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        deserializer.deserialize_str()
+    }
+}
+
+impl<'de> Visitor<'de> for SchedulerDeserializeVisitor {
+    type Value = DiffuserScheduler;
+
+    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+        formatter.write_str("Except one of `ddim`")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E> where E: Error {
+        let scheduler = if v.eq_ignore_ascii_case("ddim") {
+            DiffuserScheduler::DDIM(Box::new(DDIMScheduler::default()))
+        } else {
+            Err(E::custom("Unknown scheduler type"))?;
+        };
+        Ok(scheduler)
+    }
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de> {
+        while let Some(key) = map.next_key::<&str>() {
+            match key {}
+        }
+        Ok()
+    }
+}
+
+
+struct DiffuserSchedulerKindVisitor;
+
+impl<'de> Visitor<'de> for DiffuserSchedulerKindVisitor {
+    type Value = DiffuserSchedulerKind;
+
+    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+        formatter.write_str("Except one of `Euler`, `DDIM`")
+    }
+    fn visit_u64<E>(self, _v: u64) -> Result<Self::Value, E> where E: Error {
+        todo!()
+    }
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E> where E: Error {
+        if v.eq_ignore_ascii_case("ddim") {
+            Ok(DiffuserSchedulerKind::DDIM)
+        } else {
+            Err(E::custom("Unknown scheduler type"))?;
+        }
+    }
+    fn visit_bytes<E>(self, _v: &[u8]) -> Result<Self::Value, E> where E: Error {
+        todo!()
+    }
+}
+
+impl<'de> _serde::Deserialize<'de> for __Field {
+    #[inline]
+    fn deserialize<__D>(__deserializer: __D) -> _serde::__private::Result<Self, __D::Error> where __D: _serde::Deserializer<'de>, { Deserializer::deserialize_identifier(__deserializer, DiffuserSchedulerKindVisitor) }
+}
