@@ -13,8 +13,9 @@ edition = "2021"
 uuid = { version = "1.3.0", features = ["serde", "v7"] }
 serde = { version = "1.0.130", features = ["derive"] }
 #diffusers = "0.2.1"
-json5 = "0.4.1"
+serde_json5 = "0.1.0"
 walkdir = "2.3.2"
+diffuser-scheduler = "0.0.0"
 
 [dependencies.sevenz-rust]
 version = "0.2.0"

@@ -3,16 +3,16 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::DiffuserScheduler;
-
-pub use self::secrets::SecretKeeper;
-pub use self::text2image::{Text2ImageReply, Text2ImageTask};
-pub use self::unique::UniqueKey;
+pub use self::{
+    secrets::SecretKeeper,
+    text2image::{Text2ImageReply, Text2ImageTask},
+    unique::UniqueKey,
+};
 
 mod secrets;
-mod unique;
 mod short_action;
 mod text2image;
+mod unique;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -26,6 +26,7 @@ pub enum DiffuserAnswer {
     CollectLog(Box<CollectLogAnswer>),
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CollectLogTask {
     pub id: u128,
     pub output: PathBuf,
