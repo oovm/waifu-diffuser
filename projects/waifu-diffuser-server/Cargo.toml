@@ -22,6 +22,9 @@ clap = "4.1.8"
 anyhow = "1.0.69"
 image = "0.24.5"
 
+[dev-dependencies.waifu-diffuser-types]
+path = "../waifu-diffuser-types"
+
 [dev-dependencies]
 
 [features]

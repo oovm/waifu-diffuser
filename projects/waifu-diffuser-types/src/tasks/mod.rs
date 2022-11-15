@@ -21,6 +21,8 @@ pub enum DiffuserTask {
     CollectLog(Box<CollectLogTask>),
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum DiffuserAnswer {
     Text2Image(Box<Text2ImageReply>),
     CollectLog(Box<CollectLogAnswer>),
