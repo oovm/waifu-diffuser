@@ -1,5 +1,4 @@
 use super::*;
-use tokio::time::Interval;
 
 impl WaifuDiffuserSession {
     pub async fn new(stream: TcpStream) -> std::result::Result<WaifuDiffuserSession, tungstenite::Error> {
@@ -13,13 +12,13 @@ impl WaifuDiffuserSession {
         };
         let ws_stream = accept_async_with_config(stream, Some(config)).await?;
         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
-        Ok(WaifuDiffuserSession { sender: ws_sender, receiver: ws_receiver })
+        let interval = interval(Duration::from_millis(10000));
+        Ok(WaifuDiffuserSession { ping: interval, sender: ws_sender, receiver: ws_receiver })
     }
 }
 
 impl WaifuDiffuserSession {
     pub async fn start(&mut self) {
-        let mut interval: Interval = interval(Duration::from_millis(10000));
         loop {
             tokio::select! {
                 m = self.receiver.next() => {
@@ -27,41 +26,53 @@ impl WaifuDiffuserSession {
                         break;
                     }
                 }
-                _ = interval.tick() => {
-                    self.sender.send(Message::Ping("WaifuDiffuser".as_bytes().to_vec())).await.ok();
+                _ = self.ping.tick() => {
+                    self.do_ping().await
                 }
             }
         }
     }
     // return should break
     pub async fn on_receive(&mut self, message: Option<Result<Message, Error>>) -> bool {
-        let message = match message {
-            Some(Ok(msg)) => msg,
+        match message {
+            Some(Ok(msg)) => match msg {
+                Message::Text(text) => self.on_receive_texts(text).await,
+                Message::Binary(bytes) => self.on_receive_bytes(bytes).await,
+                Message::Ping(v) => self.do_pong(v).await,
+                Message::Pong(_) => false,
+                Message::Close(_) => true,
+                Message::Frame(_) => false,
+            },
             Some(Err(e)) => {
                 error!("Error processing connection: {}", e);
-                return false;
+                false
             }
-            None => return true,
-        };
-        match message {
-            Message::Text(text) => {
-                if let Err(e) = self.sender.send(Message::Text(v)).await {
-                    error!("Error sending pong: {}", e)
-                }
-            }
-            Message::Binary(bytes) => {
-                if let Err(e) = self.sender.send(Message::Binary(v)).await {
-                    error!("Error sending pong: {}", e)
-                }
-            }
-            Message::Ping(v) => {
-                if let Err(e) = self.sender.send(Message::Pong(v)).await {
-                    error!("Error sending pong: {}", e)
-                }
-            }
-            Message::Pong(_) => {}
-            Message::Close(_) => return true,
-            Message::Frame(_) => {}
+            None => true,
+        }
+    }
+    async fn do_ping(&mut self) {
+        let ping = "WaifuDiffuser".as_bytes().to_vec();
+        if let Err(e) = self.sender.send(Message::Ping(ping)).await {
+            error!("Error sending ping: {}", e)
+        }
+    }
+    async fn do_pong(&mut self, ping: Vec<u8>) -> bool {
+        if let Err(e) = self.sender.send(Message::Pong(ping)).await {
+            error!("Error sending pong: {}", e)
+        }
+        false
+    }
+    async fn on_receive_texts(&mut self, text: String) -> bool {
+        info!("Received a text message from {}", text);
+        if let Err(e) = self.sender.send(Message::Text(text.to_string())).await {
+            error!("Error sending pong: {}", e)
+        }
+        false
+    }
+    async fn on_receive_bytes(&mut self, bytes: Vec<u8>) -> bool {
+        info!("Received a bytes message from {:?}", bytes);
+        if let Err(e) = self.sender.send(Message::Binary(bytes.to_vec())).await {
+            error!("Error sending pong: {}", e)
         }
         false
     }
