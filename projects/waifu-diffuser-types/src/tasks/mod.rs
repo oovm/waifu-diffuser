@@ -25,7 +25,7 @@ pub enum DiffuserTask {
 #[serde(tag = "type")]
 pub enum DiffuserAnswer {
     Text2Image(Box<Text2ImageReply>),
-    CollectLog(Box<CollectLogAnswer>),
+    CollectLog(Box<CollectLogReply>),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,4 +34,5 @@ pub struct CollectLogTask {
     pub output: PathBuf,
 }
 
-pub struct CollectLogAnswer {}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CollectLogReply {}

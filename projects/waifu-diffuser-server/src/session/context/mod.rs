@@ -1,9 +1,10 @@
 use super::*;
+use waifu_diffuser_types::{DiffuserTask, Text2ImageTask};
 
 impl WaifuDiffuserSession {
     pub async fn new(stream: TcpStream) -> std::result::Result<WaifuDiffuserSession, tungstenite::Error> {
         let peer = stream.peer_addr()?;
-        info!("New WebSocket connection: {}", peer);
+        info!("New web socket connection: {}", peer);
         let config = WebSocketConfig {
             max_send_queue: None,
             max_message_size: Some(64 << 20),
@@ -63,17 +64,33 @@ impl WaifuDiffuserSession {
         false
     }
     async fn on_receive_texts(&mut self, text: String) -> bool {
-        info!("Received a text message from {}", text);
-        if let Err(e) = self.sender.send(Message::Text(text.to_string())).await {
-            error!("Error sending pong: {}", e)
-        }
+        let task: DiffuserTask = match serde_json::from_str(&text) {
+            Ok(t) => t,
+            Err(e) => {
+                error!("Error parsing task: {}", e);
+                return false;
+            }
+        };
+        self.emit_task(task, true).await;
         false
     }
     async fn on_receive_bytes(&mut self, bytes: Vec<u8>) -> bool {
-        info!("Received a bytes message from {:?}", bytes);
-        if let Err(e) = self.sender.send(Message::Binary(bytes.to_vec())).await {
-            error!("Error sending pong: {}", e)
-        }
+        let _ = bytes;
+        unimplemented!();
         false
+    }
+    async fn emit_task(&mut self, task: DiffuserTask, readable: bool) {
+        match task {
+            DiffuserTask::Text2Image(e) => {
+                self.emit_text2image(*e, readable).await;
+            }
+            DiffuserTask::CollectLog(e) => {}
+        }
+    }
+    async fn emit_text2image(&mut self, task: Text2ImageTask, readable: bool) {
+        let text = serde_json::to_string(&task).unwrap();
+        if let Err(e) = self.sender.send(Message::Text(text)).await {
+            error!("Error sending task: {}", e)
+        }
     }
 }

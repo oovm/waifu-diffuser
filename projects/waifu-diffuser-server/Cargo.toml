@@ -21,8 +21,10 @@ env_logger = "0.10.0"
 clap = "4.1.8"
 anyhow = "1.0.69"
 image = "0.24.5"
+serde_json = "1.0.94"
+bincode = "2.0.0-rc.2"
 
-[dev-dependencies.waifu-diffuser-types]
+[dependencies.waifu-diffuser-types]
 path = "../waifu-diffuser-types"
 
 [dev-dependencies]
