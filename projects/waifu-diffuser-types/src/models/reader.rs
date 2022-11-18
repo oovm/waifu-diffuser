@@ -7,7 +7,7 @@ impl DiffuserModel {
     pub fn load<P: AsRef<Path>>(file: P) -> QResult<Self> {
         let path = file.as_ref();
         let buffer = load_part(&path, "meta.json")?;
-        let kind: ModelKind = serde_json5::from_slice(&buffer).unwrap();
+        let kind: ModelKind = serde_json::from_slice(&buffer).unwrap();
         Ok(DiffuserModel { kind, path: path.canonicalize()? })
     }
     pub fn save_meta<P: AsRef<Path>>(&self, path: P) -> QResult<usize> {
@@ -15,7 +15,7 @@ impl DiffuserModel {
         if let Some(s) = path.parent() {
             create_dir_all(s)?
         }
-        let buffer = serde_json5::to_string(&self.kind).unwrap();
+        let buffer = serde_json::to_string(&self.kind).unwrap();
         let mut writer = create_writer(path).unwrap();
         let mut entry = SevenZArchiveEntry::default();
         entry.name = "meta.json".to_string();
