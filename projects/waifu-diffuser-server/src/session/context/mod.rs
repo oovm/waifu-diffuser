@@ -1,4 +1,4 @@
-use waifu_diffuser_types::{DiffuserError, DiffuserTask, Text2ImageTask};
+use waifu_diffuser_types::{DiffuserError, DiffuserTask, Text2ImageReply, Text2ImageTask};
 
 use super::*;
 
@@ -80,9 +80,14 @@ impl WaifuDiffuserSession {
 
 impl WaifuDiffuserSession {
     async fn emit_error(&mut self, error: DiffuserError, readable: bool) {
-        let text = serde_json::to_string(&error).unwrap();
-        if let Err(e) = self.sender.send(Message::Text(text)).await {
-            error!("Error sending error: {}", e)
+        match readable {
+            true => {
+                let text = serde_json::to_string(&error).unwrap();
+                self.sender.send(Message::Text(text)).await.ok();
+            }
+            false => {
+                unimplemented!()
+            }
         }
     }
 
@@ -95,9 +100,20 @@ impl WaifuDiffuserSession {
         }
     }
     async fn emit_text2image(&mut self, task: Text2ImageTask, readable: bool) {
-        let text = serde_json::to_string(&task).unwrap();
-        if let Err(e) = self.sender.send(Message::Text(text)).await {
-            error!("Error sending task: {}", e)
+        for i in 1..=task.step {
+            let answer =
+                Text2ImageReply { id: task.id.clone(), index: 0, step: i, width: task.width, height: task.height, png: vec![] };
+            match readable {
+                true => {
+                    let text = serde_json::to_string(&answer.as_response()).unwrap();
+                    if let Err(e) = self.sender.send(Message::Text(text)).await {
+                        error!("Error sending task: {}", e)
+                    }
+                }
+                false => {
+                    unimplemented!()
+                }
+            }
         }
     }
 }

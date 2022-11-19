@@ -1,6 +1,14 @@
-use image::DynamicImage;
+use std::{mem::MaybeUninit, sync::Once};
 
-use pyke_diffusers::{ArenaExtendStrategy, CUDADeviceOptions, CuDNNConvolutionAlgorithmSearch, DiffusionDevice, DiffusionDeviceControl, EulerDiscreteScheduler, OrtEnvironment, SchedulerOptimizedDefaults, StableDiffusionCallback, StableDiffusionOptions, StableDiffusionPipeline, StableDiffusionTxt2ImgOptions};
+use image::DynamicImage;
+use pyke_diffusers::{
+    ArenaExtendStrategy, CUDADeviceOptions, CuDNNConvolutionAlgorithmSearch, DiffusionDevice, DiffusionDeviceControl,
+    EulerDiscreteScheduler, OrtEnvironment, SchedulerOptimizedDefaults, StableDiffusionCallback, StableDiffusionOptions,
+    StableDiffusionPipeline, StableDiffusionTxt2ImgOptions,
+};
+use tokio::sync::Mutex;
+
+use crate::WaifuDiffuserServer;
 
 fn main() -> anyhow::Result<()> {
     let environment = OrtEnvironment::default().into_arc();
@@ -17,23 +25,21 @@ fn main() -> anyhow::Result<()> {
         &environment,
         "./pyke-diffusers-sd15-fp16/",
         StableDiffusionOptions {
-            devices: DiffusionDeviceControl {
-                unet: cuda.clone(),
-                ..Default::default()
-            },
+            devices: DiffusionDeviceControl { unet: cuda.clone(), ..Default::default() },
             ..Default::default()
         },
     )?;
 
-    let imgs = pipeline.txt2img("rust robot holding a torch", &mut scheduler, StableDiffusionTxt2ImgOptions {
-        steps: 21,
-        negative_prompt: None,
-        callback: Some(StableDiffusionCallback::ApproximateDecoded {
-            frequency: 3,
-            cb: Box::new(save_image),
-        }),
-        ..Default::default()
-    })?;
+    let imgs = pipeline.txt2img(
+        "rust robot holding a torch",
+        &mut scheduler,
+        StableDiffusionTxt2ImgOptions {
+            steps: 21,
+            negative_prompt: None,
+            callback: Some(StableDiffusionCallback::ApproximateDecoded { frequency: 3, cb: Box::new(save_image) }),
+            ..Default::default()
+        },
+    )?;
     imgs[0].to_rgb8().save("target/result.png")?;
     Ok(())
 }

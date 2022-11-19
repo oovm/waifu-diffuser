@@ -3,14 +3,13 @@ use serde::{Deserialize, Serialize};
 // mod for_7z;
 mod for_serde_json;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DiffuserError {
-    code: i16,
-    #[serde(flatten)]
+    code: i32,
     kind: Box<DiffuserErrorKind>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DiffuserErrorKind {
     IOError { message: String, path: String },
@@ -25,6 +24,6 @@ impl DiffuserError {
         S: Into<String>,
     {
         let kind = DiffuserErrorKind::DecodeError { message: message.into() };
-        Self { code: -12000, kind: Box::new(kind) }
+        Self { code: -10101, kind: Box::new(kind) }
     }
 }
