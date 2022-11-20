@@ -99,21 +99,4 @@ impl WaifuDiffuserSession {
             DiffuserTask::CollectLog(e) => {}
         }
     }
-    async fn emit_text2image(&mut self, task: Text2ImageTask, readable: bool) {
-        for i in 1..=task.step {
-            let answer =
-                Text2ImageReply { id: task.id.clone(), index: 0, step: i, width: task.width, height: task.height, png: vec![] };
-            match readable {
-                true => {
-                    let text = serde_json::to_string(&answer.as_response()).unwrap();
-                    if let Err(e) = self.sender.send(Message::Text(text)).await {
-                        error!("Error sending task: {}", e)
-                    }
-                }
-                false => {
-                    unimplemented!()
-                }
-            }
-        }
-    }
 }
