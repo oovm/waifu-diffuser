@@ -1,5 +1,6 @@
+use image::{codecs::png::PngEncoder, ColorType, DynamicImage, EncodableLayout, ImageEncoder};
 use pyke_diffusers::{
-    EulerDiscreteScheduler, OrtEnvironment, SchedulerOptimizedDefaults, StableDiffusionCallback, StableDiffusionPipeline,
+    EulerDiscreteScheduler, Prompt, SchedulerOptimizedDefaults, StableDiffusionCallback, StableDiffusionPipeline,
     StableDiffusionTxt2ImgOptions,
 };
 
@@ -12,49 +13,86 @@ impl WaifuDiffuserServer {
 }
 
 impl WaifuDiffuserSession {
-    async fn emit_text2image(&mut self, task: Text2ImageTask, readable: bool) {
-        let mut scheduler = EulerDiscreteScheduler::stable_diffusion_v1_optimized_default()?;
-        let pipeline: &StableDiffusionPipeline;
+    pub(super) async fn emit_text2image(&mut self, task: Text2ImageTask, readable: bool) {
+        let run =
+            GLOBAL_RUNNER.load_diffuser("source", async move |pipeline| self.run_text2image(task, pipeline, readable)).await;
+        match run {
+            Ok(_) => {}
+            Err(_) => {}
+        }
+    }
 
+    async fn run_text2image(
+        &mut self,
+        task: Text2ImageTask,
+        pipeline: &StableDiffusionPipeline,
+        readable: bool,
+    ) -> DiffuserResult<()> {
+        let mut scheduler = EulerDiscreteScheduler::stable_diffusion_v1_optimized_default().unwrap();
         let imgs = pipeline.txt2img(
-            "rust robot holding a torch",
+            task.positive,
             &mut scheduler,
             StableDiffusionTxt2ImgOptions {
-                steps: 21,
-                negative_prompt: None,
+                steps: task.step,
+                negative_prompt: Some(Prompt::from(task.negative)),
                 callback: Some(StableDiffusionCallback::Decoded {
                     frequency: 3,
-                    cb: Box::new(|index, timestamp, image| {
-                        let image = image.first().unwrap();
-                        println!("Generated {} images", index);
-                        image.clone().into_rgb8().save(format!("target/result-{:03}.png", index)).unwrap();
+                    cb: Box::new(|steps, timestamp, image| async {
+                        for (index, image) in image.iter().enumerate() {
+                            let png = match encode_png(image) {
+                                Ok(png) => png,
+                                Err(_) => continue,
+                            };
+                            self.relpy_task2image(
+                                Text2ImageReply {
+                                    id: task.id.clone(),
+                                    index,
+                                    step: steps,
+                                    width: task.width,
+                                    height: task.height,
+                                    png,
+                                },
+                                readable,
+                            )
+                            .await;
+                        }
                         true
                     }),
                 }),
                 ..Default::default()
             },
         )?;
-        imgs[0].to_rgb8().save("target/result.png")?;
+        for (i, img) in imgs.iter().enumerate() {
+            let png = match encode_png(img) {
+                Ok(png) => png,
+                Err(_) => continue,
+            };
+            self.relpy_task2image(
+                Text2ImageReply { id: task.id.clone(), index: i, step: task.step, width: task.width, height: task.height, png },
+                readable,
+            )
+            .await;
+        }
         Ok(())
-
-        for i in 1..=task.step {
-
-
-
-
-            let answer =
-                Text2ImageReply { id: task.id.clone(), index: 0, step: i, width: task.width, height: task.height, png: vec![] };
-            match readable {
-                true => {
-                    let text = serde_json::to_string(&answer.as_response()).unwrap();
-                    if let Err(e) = self.sender.send(Message::Text(text)).await {
-                        error!("Error sending task: {}", e)
-                    }
+    }
+    async fn relpy_task2image(&mut self, reply: Text2ImageReply, readable: bool) {
+        match readable {
+            true => {
+                let text = serde_json::to_string(&reply.as_response()).unwrap();
+                if let Err(e) = self.sender.send(Message::Text(text)).await {
+                    error!("Error sending task: {}", e)
                 }
-                false => {
-                    unimplemented!()
-                }
+            }
+            false => {
+                unimplemented!()
             }
         }
     }
+}
+
+fn encode_png(image: &DynamicImage) -> DiffuserResult<Vec<u8>> {
+    let mut png = vec![];
+    let encoder = PngEncoder::new(&mut png);
+    encoder.write_image(image.to_rgb8().as_bytes(), image.width(), image.height(), ColorType::Rgb8)?;
+    Ok(png)
 }

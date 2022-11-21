@@ -19,7 +19,7 @@ pub struct Text2ImageTask {
     /// index of the image in the batch
     pub batch: u8,
     /// index of the image in the batch
-    pub step: u8,
+    pub step: usize,
     /// index of the image in the batch
     pub scheduler: DiffuserScheduler,
 }
@@ -44,9 +44,9 @@ pub struct Text2ImageReply {
     /// UUID of the task
     pub id: String,
     /// index of the image in the batch
-    pub index: u8,
+    pub index: usize,
     /// Step of this diffusion
-    pub step: u8,
+    pub step: usize,
     /// width of the image
     pub width: u32,
     /// height of the image
