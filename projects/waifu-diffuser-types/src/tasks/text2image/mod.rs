@@ -19,6 +19,8 @@ pub struct Text2ImageTask {
     /// index of the image in the batch
     pub batch: u8,
     /// index of the image in the batch
+    pub start_id: usize,
+    /// index of the image in the batch
     pub step: usize,
     /// index of the image in the batch
     pub scheduler: DiffuserScheduler,
@@ -33,6 +35,7 @@ impl Default for Text2ImageTask {
             width: 256,
             height: 256,
             batch: 1,
+            start_id: 0,
             step: 20,
             scheduler: Default::default(),
         }
@@ -43,10 +46,10 @@ impl Default for Text2ImageTask {
 pub struct Text2ImageReply {
     /// UUID of the task
     pub id: String,
-    /// index of the image in the batch
-    pub index: usize,
     /// Step of this diffusion
     pub step: usize,
+    /// index of the image in the batch
+    pub index: usize,
     /// width of the image
     pub width: u32,
     /// height of the image

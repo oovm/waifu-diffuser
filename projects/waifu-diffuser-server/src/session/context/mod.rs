@@ -96,7 +96,7 @@ impl WaifuDiffuserSession {
             DiffuserTask::Text2Image(e) => {
                 self.emit_text2image(*e, readable).await;
             }
-            DiffuserTask::CollectLog(e) => {}
+            DiffuserTask::CollectLog(_e) => {}
         }
     }
 }
