@@ -1,4 +1,5 @@
 use super::*;
+use crate::ResourcePath;
 use semver::Version;
 use url::Url;
 
@@ -7,10 +8,7 @@ use url::Url;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UNetModel {
     version: Version,
-    net_path: String,
-    net_url: Url,
-    vae_encoder_path: String,
-    vae_encoder_url: Url,
-    vae_decoder_path: String,
-    vae_decoder_url: Url,
+    net: ResourcePath,
+    vae_encoder: Option<ResourcePath>,
+    vae_decoder: Option<ResourcePath>,
 }
