@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 // mod for_7z;
-mod for_serde_json;
-
+#[cfg(feature = "anyhow")]
 mod for_anyhow;
+mod for_image;
+mod for_serde_json;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DiffuserError {

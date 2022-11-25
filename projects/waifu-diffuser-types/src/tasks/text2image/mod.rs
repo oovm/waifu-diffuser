@@ -8,21 +8,21 @@ mod der;
 pub struct Text2ImageTask {
     /// UUID of the task, used for accept or cancel task
     pub id: String,
-    /// index of the image in the batch
+    /// positive prompts of the image
     pub positive: String,
-    /// index of the image in the batch
+    /// negative prompts of the image
     pub negative: String,
-    /// index of the image in the batch
+    /// preferred width of the image, recommended to be times of 32
     pub width: u32,
-    /// index of the image in the batch
+    /// preferred height of the image, recommended to be times of 32
     pub height: u32,
-    /// index of the image in the batch
+    /// batch size of the request
     pub batch: u8,
-    /// index of the image in the batch
+    /// start index of the batch, used for reducer
     pub start_id: usize,
-    /// index of the image in the batch
+    /// number of steps to run
     pub step: usize,
-    /// index of the image in the batch
+    /// which scheduler to use
     pub scheduler: DiffuserScheduler,
 }
 
@@ -44,7 +44,7 @@ impl Default for Text2ImageTask {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Text2ImageReply {
-    /// UUID of the task
+    /// UUID of the task, used to identify the task
     pub id: String,
     /// Step of this diffusion
     pub step: usize,
@@ -54,8 +54,14 @@ pub struct Text2ImageReply {
     pub width: u32,
     /// height of the image
     pub height: u32,
-    /// png image
+    /// png image bytes
     pub png: Vec<u8>,
+}
+
+impl Text2ImageTask {
+    pub fn reply_with(&self, step: usize, index: usize, png: Vec<u8>) -> Text2ImageReply {
+        Text2ImageReply { id: self.id.clone(), step, index: self.start_id + index, width: self.width, height: self.height, png }
+    }
 }
 
 impl Text2ImageReply {
