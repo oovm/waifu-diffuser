@@ -16,16 +16,9 @@ impl<'de> Deserialize<'de> for UNetModel {
     where
         D: Deserializer<'de>,
     {
-        let url = Url::from_directory_path(".").unwrap();
-        let mut out = UNetModel {
-            version: Version::new(1, 5, 0),
-            net_path: "".to_string(),
-            net_url: url.clone(),
-            vae_encoder_path: "".to_string(),
-            vae_encoder_url: url.clone(),
-            vae_decoder_path: "".to_string(),
-            vae_decoder_url: url.clone(),
-        };
+        let id = String::new();
+        let path = ResourcePath::new("https://example.com", "").unwrap();
+        let mut out = UNetModel::new(id, path);
         deserializer.deserialize_map(UnetVisitor { place: &mut out })?;
         Ok(out)
     }
@@ -42,7 +35,7 @@ impl<'i, 'de> Visitor<'de> for UnetVisitor<'i> {
     type Value = ();
 
     fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-        formatter.write_str("Except a `Text2ImageTask` object")
+        formatter.write_str("Except a `UNetModel` object")
     }
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
     where
@@ -50,32 +43,20 @@ impl<'i, 'de> Visitor<'de> for UnetVisitor<'i> {
     {
         while let Some(key) = map.next_key::<&str>()? {
             match key {
-                "id" => {
-                    self.place.id = map.next_value()?;
+                "version" => {
+                    self.place.version = map.next_value()?;
                 }
-                "text" => {
-                    // self.place.text = map.next_value()?;
+                "net" | "unet" => {
+                    self.place.net = map.next_value()?;
                 }
-                "font" => {
-                    // self.place.font = map.next_value()?;
+                "vae_encoder" | "vae-encoder" => {
+                    self.place.vae_encoder = map.next_value()?;
                 }
-                "font_size" => {
-                    // self.place.font_size = map.next_value()?;
+                "vae_decoder" | "vae-decoder" => {
+                    self.place.vae_decoder = map.next_value()?;
                 }
-                "font_color" => {
-                    // self.place.font_color = map.next_value()?;
-                }
-                "background_color" => {
-                    // self.place.background_color = map.next_value()?;
-                }
-                "w" | "width" => {
-                    self.place.width = map.next_value()?;
-                }
-                "h" | "height" => {
-                    self.place.height = map.next_value()?;
-                }
-                "output" => {
-                    // self.place.output = map.next_value()?;
+                "preview" => {
+                    self.place.preview = map.next_value()?;
                 }
                 _ => {
                     println!("Unknown key: {}", key);
@@ -83,8 +64,8 @@ impl<'i, 'de> Visitor<'de> for UnetVisitor<'i> {
                 }
             }
         }
-        if self.place.id.is_empty() {
-            Err(Error::missing_field("id"))?
+        if self.place.net.local.to_string_lossy().eq("") {
+            Err(Error::missing_field("net"))?
         }
         Ok(())
     }

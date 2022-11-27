@@ -4,7 +4,7 @@ use super::*;
 
 mod der;
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Text2ImageTask {
     /// UUID of the task, used for accept or cancel task
     pub id: String,
@@ -59,8 +59,17 @@ pub struct Text2ImageReply {
 }
 
 impl Text2ImageTask {
-    pub fn reply_with(&self, step: usize, index: usize, png: Vec<u8>) -> Text2ImageReply {
+    pub fn as_reply(&self, step: usize, index: usize, png: Vec<u8>) -> Text2ImageReply {
         Text2ImageReply { id: self.id.clone(), step, index: self.start_id + index, width: self.width, height: self.height, png }
+    }
+    pub fn with_prompts<P, N>(mut self, positive: P, negative: N) -> Self
+    where
+        P: Into<String>,
+        N: Into<String>,
+    {
+        self.positive = positive.into();
+        self.negative = negative.into();
+        self
     }
 }
 

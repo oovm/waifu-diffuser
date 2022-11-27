@@ -1,6 +1,6 @@
 use crate::DiffuserError;
 use image::ImageError;
-use url::{ParseError, Url};
+use url::ParseError;
 
 impl From<ImageError> for DiffuserError {
     fn from(value: ImageError) -> Self {
