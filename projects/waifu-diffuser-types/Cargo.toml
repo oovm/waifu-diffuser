@@ -19,17 +19,17 @@ image = "0.24.5"
 semver = { version = "1.0.16", features = ["serde"] }
 url = { version = "2.3.1", features = ["serde"] }
 anyhow = { version = "1.0.69", optional = true }
+package-key = "0.2.0"
 
 [dependencies.resource-path]
-version = "0.0.0"
+version = "0.1.0"
 features = ["serde"]
-path = "D:\\Python\\fs-tools\\projects\\resource-path"
 
-[dependencies.sevenz-rust]
-version = "0.2.0"
-git = "https://github.com/dyz1990/sevenz-rust.git"
-branch = "7z_edit"
-features = ["compress"]
+#[dependencies.sevenz-rust]
+#version = "0.2.0"
+#git = "https://github.com/dyz1990/sevenz-rust.git"
+#branch = "7z_edit"
+#features = ["compress"]
 #serde-aux = "4.1.2"
 
 [dependencies.diagnostic-quick]

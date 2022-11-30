@@ -11,7 +11,7 @@ pub mod vae;
 
 #[derive(Clone, Debug)]
 pub struct DiffuserRunner {
-    models: DiffuserModel,
+    // models: DiffuserModel,
     // vae: Option<StableDiffusionConfig>,
 }
 

@@ -1,5 +1,5 @@
 {
-    "id": "ANYTHING_V4.5_FP16",
+    "model_id": "ANYTHING_V4.5_FP16",
     "version": "1.5.0",
     "net": {
         "network": "https://huggingface.co/oovm/anything/resolve/main/anything-v4.5-fp16/unet.onnx",
@@ -10,7 +10,7 @@
     "preview": null,
     "examples": [
         {
-            "id": "",
+            "task_id": "",
             "positive": "masterpiece, best quality, 1girl, white hair, medium hair, cat ears, closed eyes, looking at viewer, :3, cute, scarf, jacket, outdoors, streets",
             "negative": "",
             "width": 256,

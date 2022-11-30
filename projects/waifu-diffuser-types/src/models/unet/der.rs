@@ -16,9 +16,8 @@ impl<'de> Deserialize<'de> for UNetModel {
     where
         D: Deserializer<'de>,
     {
-        let id = String::new();
         let path = ResourcePath::new("https://example.com", "").unwrap();
-        let mut out = UNetModel::new(id, path);
+        let mut out = UNetModel::new("", path);
         deserializer.deserialize_map(UnetVisitor { place: &mut out })?;
         Ok(out)
     }

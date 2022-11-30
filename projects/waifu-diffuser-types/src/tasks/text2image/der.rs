@@ -42,7 +42,7 @@ impl<'i, 'de> Visitor<'de> for Text2ImageVisitor<'i> {
         while let Some(key) = map.next_key::<&str>()? {
             match key {
                 "id" => {
-                    self.place.id = map.next_value()?;
+                    self.place.task_id = map.next_value()?;
                 }
                 "text" => {
                     // self.place.text = map.next_value()?;
@@ -74,7 +74,7 @@ impl<'i, 'de> Visitor<'de> for Text2ImageVisitor<'i> {
                 }
             }
         }
-        if self.place.id.is_empty() {
+        if self.place.task_id.is_empty() {
             Err(Error::missing_field("id"))?
         }
         Ok(())

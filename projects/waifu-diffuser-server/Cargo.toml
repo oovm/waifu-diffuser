@@ -10,8 +10,6 @@ license = "MPL-2.0"
 edition = "2021"
 
 [dependencies]
-pyke-diffusers = "0.2.0"
-safetensors = "0.3.0"
 tokio-tungstenite = "0.18.0"
 tokio = { version = "1.26.0", features = ["full"] }
 tungstenite = "0.18.0"
@@ -23,6 +21,13 @@ anyhow = "1.0.69"
 image = "0.24.5"
 serde_json = "1.0.94"
 bincode = "2.0.0-rc.2"
+tracing-subscriber = "0.3"
+
+
+[dependencies.pyke-diffusers]
+version = "0.2.0"
+features = ["common-schedulers", "stable-diffusion"]
+default-features = false
 
 [dependencies.waifu-diffuser-types]
 path = "../waifu-diffuser-types"

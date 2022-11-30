@@ -24,7 +24,6 @@ pub struct DiffuserError {
 pub enum DiffuserErrorKind {
     IOError { message: String, path: String },
     DecodeError { message: String },
-
     CustomError { message: String },
 }
 

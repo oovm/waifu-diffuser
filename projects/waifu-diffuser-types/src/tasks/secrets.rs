@@ -1,3 +1,1 @@
-pub struct SecretKeeper {
-    secret: u128,
-}
+pub struct SecretKeeper {}

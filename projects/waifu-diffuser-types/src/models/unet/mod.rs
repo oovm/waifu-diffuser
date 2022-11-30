@@ -1,3 +1,4 @@
+use package_key::InsensitiveKey;
 use semver::Version;
 
 use crate::{ResourcePath, Text2ImageTask};
@@ -8,7 +9,7 @@ mod der;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct UNetModel {
-    id: String,
+    model_id: InsensitiveKey,
     version: Version,
     net: ResourcePath,
     vae_encoder: Option<ResourcePath>,
@@ -18,9 +19,9 @@ pub struct UNetModel {
 }
 
 impl UNetModel {
-    pub fn new<S: AsRef<str>>(id: S, path: ResourcePath) -> Self {
+    pub fn new(id: &str, path: ResourcePath) -> Self {
         let mut empty = Self {
-            id: "".to_string(),
+            model_id: InsensitiveKey::new(""),
             version: Version::new(1, 5, 0),
             net: path,
             vae_encoder: None,
@@ -31,13 +32,13 @@ impl UNetModel {
         empty.set_id(id);
         empty
     }
-    pub fn get_id(&self) -> &str {
-        &self.id
+    pub fn get_id(&self) -> &InsensitiveKey {
+        &self.model_id
     }
-    pub fn set_id<S: AsRef<str>>(&mut self, id: S) {
-        self.id = norm_id(id.as_ref());
+    pub fn set_id(&mut self, id: &str) {
+        self.model_id = InsensitiveKey::new(id);
     }
-    pub fn with_id<S: AsRef<str>>(mut self, id: S) -> Self {
+    pub fn with_id(mut self, id: &str) -> Self {
         self.set_id(id);
         self
     }
@@ -49,15 +50,4 @@ impl UNetModel {
     pub fn add_example(&mut self, example: Text2ImageTask) {
         self.examples.push(example);
     }
-}
-
-fn norm_id(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for c in s.chars() {
-        match c {
-            ' ' | '_' | '-' => out.push('_'),
-            _ => out.push(c.to_ascii_uppercase()),
-        }
-    }
-    out
 }
