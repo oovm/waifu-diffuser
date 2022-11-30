@@ -10,6 +10,7 @@ pub use self::{
 };
 
 mod collect_log;
+mod queue;
 mod secrets;
 mod short_action;
 mod text2image;

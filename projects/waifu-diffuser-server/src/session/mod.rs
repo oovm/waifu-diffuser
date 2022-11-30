@@ -20,6 +20,8 @@ use tokio::{
 use tokio_tungstenite::{accept_async_with_config, tungstenite::Error, WebSocketStream};
 use tungstenite::{protocol::WebSocketConfig, Message, Result};
 
+use waifu_diffuser_types::DiffuserTask;
+
 mod server;
 
 mod context;
