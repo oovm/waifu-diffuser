@@ -1,11 +1,12 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
 
 use crate::{ClipModel, DanBooruModel, UNetModel, VaeModel};
 
 pub mod clip;
 pub mod deep_dan_booru;
-mod reader;
+// mod reader;
 pub mod unet;
 pub mod vae;
 

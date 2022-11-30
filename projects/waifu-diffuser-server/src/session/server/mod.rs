@@ -1,4 +1,3 @@
-use std::{future::Future, path::Path};
 use tokio::sync::MutexGuard;
 
 use waifu_diffuser_types::DiffuserResult;

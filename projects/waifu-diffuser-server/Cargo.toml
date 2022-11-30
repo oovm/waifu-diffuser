@@ -25,8 +25,9 @@ tracing-subscriber = "0.3"
 
 
 [dependencies.pyke-diffusers]
-version = "0.2.0"
-features = ["common-schedulers", "stable-diffusion"]
+git = "https://github.com/pykeio/diffusers.git"
+#version = "0.2.0"
+features = ["common-schedulers", "stable-diffusion", "ort-tensorrt", "ort-load-dynamic"]
 default-features = false
 
 [dependencies.waifu-diffuser-types]

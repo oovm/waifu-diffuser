@@ -25,13 +25,6 @@ package-key = "0.2.0"
 version = "0.1.0"
 features = ["serde"]
 
-#[dependencies.sevenz-rust]
-#version = "0.2.0"
-#git = "https://github.com/dyz1990/sevenz-rust.git"
-#branch = "7z_edit"
-#features = ["compress"]
-#serde-aux = "4.1.2"
-
 [dependencies.diagnostic-quick]
 version = "0.4.0"
 features = ["walkdir", "json5"]
