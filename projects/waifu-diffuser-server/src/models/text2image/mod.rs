@@ -4,34 +4,33 @@ use pyke_diffusers::{
     DiffusionDeviceControl, EulerAncestralDiscreteScheduler, OrtEnvironment, SchedulerOptimizedDefaults,
     StableDiffusionOptions, StableDiffusionTxt2ImgOptions,
 };
+use tokio::{sync::MutexGuard, task::JoinHandle};
 
-use waifu_diffuser_types::DiffuserResult;
+use waifu_diffuser_types::{DiffuserResult, UNetModel};
 
 use crate::utils::cuda_device;
 
 use super::*;
 
-static SINGLETON: LazyLock<StableDiffusionWorker> = LazyLock::new(|| StableDiffusionWorker::default());
+static SINGLETON: LazyLock<Arc<Mutex<StableDiffusionWorker>>> = LazyLock::new(|| {
+    let worker = StableDiffusionWorker { model: None, worker: None };
+    Arc::new(Mutex::new(worker))
+});
 
-#[derive(Default)]
 pub struct StableDiffusionWorker {
-    worker: Arc<Mutex<Option<StableDiffusionPipeline>>>,
+    model: Option<UNetModel>,
+    worker: Option<StableDiffusionPipeline>,
 }
 
 impl StableDiffusionWorker {
-    pub fn instance() -> &'static Self {
-        &SINGLETON
-    }
-    pub fn load_model(&self, env: &Arc<OrtEnvironment>, path: &Path) -> DiffuserResult<()> {
-        let mut this = match self.worker.try_lock() {
-            Ok(mut s) => {
-                if self.same_model(path) {
-                    return Ok(());
-                }
-                s
-            }
-            Err(e) => unimplemented!("{}", e),
-        };
+    // pub async fn instance() -> MutexGuard<'static, StableDiffusionWorker> {
+    //     SINGLETON.lock().await
+    // }
+    pub async fn load_model(env: &Arc<OrtEnvironment>, path: &Path) -> DiffuserResult<()> {
+        let mut this = SINGLETON.lock().await;
+        if this.is_same_model(path) {
+            return Ok(());
+        }
         let loading = StableDiffusionPipeline::new(
             &env,
             path,
@@ -39,49 +38,44 @@ impl StableDiffusionWorker {
         );
         match loading {
             Ok(o) => {
-                *this = Some(o);
-                Ok(())
+                this.worker = Some(o);
             }
             Err(e) => {
                 unimplemented!("{}", e)
             }
         }
+        Ok(())
     }
-    fn same_model(&self, path: &Path) -> bool {
-        unimplemented!()
+    fn is_same_model(&self, path: &Path) -> bool {
+        let _ = path;
+        false
     }
-
-    pub fn drop_model(&self) -> bool {
-        match self.worker.try_lock() {
-            Ok(s) => {
-                *s = None;
-                true
-            }
-            Err(_) => false,
-        }
+    pub async fn drop_model() {
+        let mut this = SINGLETON.lock().await;
+        this.model = None;
+        this.worker = None;
     }
-    pub fn spawn(&self) -> bool {
-        let worker = self.worker.clone();
+    pub fn spawn(&self) -> JoinHandle<()> {
         tokio::task::spawn_blocking(move || {
             loop {
-                let runner = match worker.try_lock() {
-                    Ok(o) => match o.as_ref() {
-                        Some(o) => o,
+                match SINGLETON.try_lock() {
+                    Ok(o) => match o.worker.as_ref() {
+                        Some(runner) => {
+                            let task = StableDiffusionTxt2ImgOptions::default();
+                            let mut scheduler = match EulerAncestralDiscreteScheduler::stable_diffusion_v1_optimized_default() {
+                                Ok(o) => o,
+                                Err(e) => {
+                                    unimplemented!("{}", e)
+                                }
+                            };
+                            let result = task.run(runner, &mut scheduler);
+                        }
                         None => continue,
                     },
                     Err(_) => continue,
                 };
-                let task = StableDiffusionTxt2ImgOptions::default();
-                let mut scheduler = match EulerAncestralDiscreteScheduler::stable_diffusion_v1_optimized_default() {
-                    Ok(o) => o,
-                    Err(e) => {
-                        unimplemented!("{}", e)
-                    }
-                };
-                let result = task.run(runner, &mut scheduler);
             }
-        });
-        todo!()
+        })
     }
 }
 
