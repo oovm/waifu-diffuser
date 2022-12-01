@@ -10,9 +10,13 @@ license = "MPL-2.0"
 edition = "2021"
 
 [dependencies]
-serde = { version = "1.0.130", features = ["derive"] }
-diffusers = "0.2.1"
-sevenz-rust = "0.2.0"
+serde = { version = "1.0.156", features = ["derive"] }
+
+[dependencies.pyke-diffusers]
+git = "https://github.com/pykeio/diffusers.git"
+#version = "0.2.0"
+features = ["common-schedulers", "stable-diffusion", "ort-tensorrt"]
+default-features = false
 
 [dev-dependencies]
 

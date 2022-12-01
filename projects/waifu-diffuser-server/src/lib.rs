@@ -5,3 +5,4 @@ pub use crate::session::{WaifuDiffuserServer, WaifuDiffuserSession, GLOBAL_RUNNE
 
 mod models;
 mod session;
+mod utils;

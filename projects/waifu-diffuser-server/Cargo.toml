@@ -13,7 +13,7 @@ edition = "2021"
 tokio-tungstenite = "0.18.0"
 tokio = { version = "1.26.0", features = ["full"] }
 tungstenite = "0.18.0"
-futures-util = "0.3.17"
+futures-util = "0.3.27"
 log = "0.4.17"
 env_logger = "0.10.0"
 clap = "4.1.8"
@@ -21,13 +21,13 @@ anyhow = "1.0.69"
 image = "0.24.5"
 serde_json = "1.0.94"
 bincode = "2.0.0-rc.2"
-tracing-subscriber = "0.3"
-
+tracing-subscriber = "0.3.16"
+task-system = { version = "0.1.0", features = ["tokio"] }
 
 [dependencies.pyke-diffusers]
 git = "https://github.com/pykeio/diffusers.git"
 #version = "0.2.0"
-features = ["common-schedulers", "stable-diffusion", "ort-tensorrt"]
+features = ["common-schedulers", "stable-diffusion", "ort-tensorrt", "ort-load-dynamic"]
 default-features = false
 
 [dependencies.waifu-diffuser-types]
