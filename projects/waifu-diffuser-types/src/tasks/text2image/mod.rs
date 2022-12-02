@@ -23,7 +23,7 @@ pub struct Text2ImageTask {
     /// start index of the batch, used for reducer
     pub start_id: usize,
     /// number of steps to run
-    pub step: usize,
+    pub steps: usize,
     /// which scheduler to use
     pub scheduler: DiffuserScheduler,
 }
@@ -38,7 +38,7 @@ impl Default for Text2ImageTask {
             height: 256,
             batch: 1,
             start_id: 0,
-            step: 20,
+            steps: 20,
             scheduler: Default::default(),
         }
     }

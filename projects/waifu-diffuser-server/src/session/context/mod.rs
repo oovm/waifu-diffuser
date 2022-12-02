@@ -1,4 +1,4 @@
-use waifu_diffuser_types::{DiffuserError, DiffuserTask, Text2ImageReply, Text2ImageTask};
+use waifu_diffuser_types::{DiffuserError, DiffuserTaskKind};
 
 use super::*;
 
@@ -13,9 +13,9 @@ impl WaifuDiffuserSession {
             accept_unmasked_frames: false,
         };
         let ws_stream = accept_async_with_config(stream, Some(config)).await?;
-        let (mut ws_sender, mut ws_receiver) = ws_stream.split();
+        let (mut sender, mut receiver) = WaifuDiffuserSender::new(ws_stream);
         let interval = interval(Duration::from_millis(10000));
-        Ok(WaifuDiffuserSession { ping: interval, sender: ws_sender, receiver: ws_receiver })
+        Ok(WaifuDiffuserSession { ping: interval, sender, receiver })
     }
 }
 
@@ -65,9 +65,9 @@ impl WaifuDiffuserSession {
         false
     }
     async fn on_receive_texts(&mut self, text: String) -> bool {
-        match serde_json::from_str::<DiffuserTask>(&text) {
-            Ok(task) => self.emit_task(task, true).await,
-            Err(e) => self.emit_error(DiffuserError::from(e), true).await,
+        match serde_json::from_str::<DiffuserTaskKind>(&text) {
+            Ok(task) => self.sender.emit_task(task, true).await,
+            Err(e) => self.sender.emit_error(DiffuserError::from(e), true).await,
         };
         false
     }
@@ -75,28 +75,5 @@ impl WaifuDiffuserSession {
         let _ = bytes;
         unimplemented!();
         false
-    }
-}
-
-impl WaifuDiffuserSession {
-    async fn emit_error(&mut self, error: DiffuserError, readable: bool) {
-        match readable {
-            true => {
-                let text = serde_json::to_string(&error).unwrap();
-                self.sender.send(Message::Text(text)).await.ok();
-            }
-            false => {
-                unimplemented!()
-            }
-        }
-    }
-
-    async fn emit_task(&mut self, task: DiffuserTask, readable: bool) {
-        match task {
-            DiffuserTask::Text2Image(e) => {
-                self.emit_text2image(*e, readable).await;
-            }
-            DiffuserTask::CollectLog(_e) => {}
-        }
     }
 }

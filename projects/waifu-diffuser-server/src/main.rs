@@ -1,6 +1,7 @@
 use log::info;
 use tokio::net::{TcpListener, TcpStream};
-use waifu_diffuser::WaifuDiffuserSession;
+
+use waifu_diffuser::{StableDiffusionWorker, WaifuDiffuserSession};
 
 pub struct Application {}
 
@@ -10,6 +11,7 @@ pub async fn main() {
     let addr = "127.0.0.1:9527";
     let listener = TcpListener::bind(&addr).await.expect("Can't listen");
     info!("Listening on: {}", addr);
+    StableDiffusionWorker::spawn();
     while let Ok((stream, _)) = listener.accept().await {
         tokio::spawn(accept_connection(stream));
     }

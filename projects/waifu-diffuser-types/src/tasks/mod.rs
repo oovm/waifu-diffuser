@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use package_key::InsensitiveKey;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -16,8 +17,16 @@ mod short_action;
 mod text2image;
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct DiffuserTask {
+    pub task_id: InsensitiveKey,
+    pub user_id: InsensitiveKey,
+    pub secret: String,
+    pub task: DiffuserTaskKind,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum DiffuserTask {
+pub enum DiffuserTaskKind {
     Text2Image(Box<Text2ImageTask>),
     CollectLog(Box<CollectLogTask>),
 }

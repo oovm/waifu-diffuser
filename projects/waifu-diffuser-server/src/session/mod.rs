@@ -10,7 +10,7 @@ use futures_util::{
 use log::*;
 use pyke_diffusers::{
     ArenaExtendStrategy, CUDADeviceOptions, CuDNNConvolutionAlgorithmSearch, DiffusionDevice, DiffusionDeviceControl,
-    OrtEnvironment, SchedulerOptimizedDefaults, StableDiffusionOptions, StableDiffusionPipeline,
+    OrtEnvironment, StableDiffusionOptions, StableDiffusionPipeline,
 };
 use tokio::{
     net::TcpStream,
@@ -20,11 +20,9 @@ use tokio::{
 use tokio_tungstenite::{accept_async_with_config, tungstenite::Error, WebSocketStream};
 use tungstenite::{protocol::WebSocketConfig, Message, Result};
 
-use waifu_diffuser_types::DiffuserTask;
-
-mod server;
-
 mod context;
+mod sender;
+mod server;
 
 pub static GLOBAL_RUNNER: LazyLock<WaifuDiffuserServer> = LazyLock::new(|| {
     let environment = OrtEnvironment::default().into_arc();
@@ -38,6 +36,11 @@ pub struct WaifuDiffuserServer {
 
 pub struct WaifuDiffuserSession {
     ping: Interval,
-    sender: SplitSink<WebSocketStream<TcpStream>, Message>,
+    sender: WaifuDiffuserSender,
     receiver: SplitStream<WebSocketStream<TcpStream>>,
+}
+
+#[derive(Clone)]
+pub struct WaifuDiffuserSender {
+    shared: Arc<Mutex<SplitSink<WebSocketStream<TcpStream>, Message>>>,
 }
