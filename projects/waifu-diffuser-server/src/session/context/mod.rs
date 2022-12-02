@@ -1,9 +1,11 @@
-use waifu_diffuser_types::{DiffuserError, DiffuserTaskKind};
+use tokio::task::JoinHandle;
+
+use waifu_diffuser_types::{DiffuserError, DiffuserResult, DiffuserTaskKind};
 
 use super::*;
 
-impl WaifuDiffuserSession {
-    pub async fn new(stream: TcpStream) -> std::result::Result<WaifuDiffuserSession, tungstenite::Error> {
+impl WaifuDiffuserServer {
+    pub async fn connect(&self, stream: TcpStream, user: Uuid) -> DiffuserResult<WaifuDiffuserSender> {
         let peer = stream.peer_addr()?;
         info!("New web socket connection: {}", peer);
         let config = WebSocketConfig {
@@ -13,26 +15,32 @@ impl WaifuDiffuserSession {
             accept_unmasked_frames: false,
         };
         let ws_stream = accept_async_with_config(stream, Some(config)).await?;
-        let (mut sender, mut receiver) = WaifuDiffuserSender::new(ws_stream);
-        let interval = interval(Duration::from_millis(10000));
-        Ok(WaifuDiffuserSession { ping: interval, sender, receiver })
+        let (sender, receiver) = WaifuDiffuserSender::new(ws_stream, user.clone());
+        // let interval = interval(Duration::from_millis(10000));
+        let session = WaifuDiffuserSession { user_id: user, receiver, sender };
+        let sender = session.sender.clone();
+        self.connections.insert(user, session);
+        Ok(sender)
     }
 }
 
 impl WaifuDiffuserSession {
-    pub async fn start(&mut self) {
-        loop {
-            tokio::select! {
-                m = self.receiver.next() => {
-                    if self.on_receive(m).await {
-                        break;
+    pub async fn start(&mut self) -> JoinHandle<()> {
+        let interval = interval(Duration::from_millis(10000));
+        tokio::spawn(async {
+            loop {
+                tokio::select! {
+                    m = self.receiver.next() => {
+                        if self.on_receive(m).await {
+                            break;
+                        }
+                    }
+                    _ = interval.tick() => {
+                        self.do_ping().await
                     }
                 }
-                _ = self.ping.tick() => {
-                    self.do_ping().await
-                }
             }
-        }
+        })
     }
     // return should break
     pub async fn on_receive(&mut self, message: Option<Result<Message, Error>>) -> bool {
@@ -52,14 +60,19 @@ impl WaifuDiffuserSession {
             None => true,
         }
     }
-    async fn do_ping(&mut self) {
+    pub async fn send_message(&self, message: Message) -> DiffuserResult<()> {
+        let mut sender = self.sender.shared.lock().await;
+        sender.send(message).await?;
+        Ok(())
+    }
+    async fn do_ping(&self) {
         let ping = "WaifuDiffuser".as_bytes().to_vec();
-        if let Err(e) = self.sender.send(Message::Ping(ping)).await {
+        if let Err(e) = self.send_message(Message::Ping(ping)).await {
             error!("Error sending ping: {}", e)
         }
     }
-    async fn do_pong(&mut self, ping: Vec<u8>) -> bool {
-        if let Err(e) = self.sender.send(Message::Pong(ping)).await {
+    async fn do_pong(&self, ping: Vec<u8>) -> bool {
+        if let Err(e) = self.send_message(Message::Pong(ping)).await {
             error!("Error sending pong: {}", e)
         }
         false

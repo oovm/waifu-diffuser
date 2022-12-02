@@ -1,13 +1,17 @@
-use waifu_diffuser_types::{DiffuserError, DiffuserTaskKind};
+use waifu_diffuser_types::{DiffuserError, DiffuserResult, DiffuserTaskKind};
 
 use super::*;
 
 impl WaifuDiffuserSender {
-    pub fn new(wss: WebSocketStream<TcpStream>) -> (Self, SplitStream<WebSocketStream<TcpStream>>) {
+    pub fn new(wss: WebSocketStream<TcpStream>, user: Uuid) -> (Self, SplitStream<WebSocketStream<TcpStream>>) {
         let (sender, receiver) = wss.split();
-        (Self { shared: Arc::new(Mutex::new(sender)) }, receiver)
+        (Self { user_id: user, shared: Arc::new(Mutex::new(sender)) }, receiver)
     }
-    pub async fn emit_error(&mut self, error: DiffuserError, readable: bool) {
+    pub async fn send(&self, msg: Message) -> DiffuserResult<()> {
+        Ok(self.shared.lock().await.send(msg).await?)
+    }
+
+    pub async fn emit_error(&self, error: DiffuserError, readable: bool) {
         match readable {
             true => {
                 let text = serde_json::to_string(&error).unwrap();

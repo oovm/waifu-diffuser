@@ -1,7 +1,3 @@
-use std::sync::mpsc::Sender;
-
-use image::{codecs::png::PngEncoder, ColorType, DynamicImage, EncodableLayout, ImageEncoder};
-
 use waifu_diffuser_types::{Text2ImageReply, Text2ImageTask};
 
 use super::*;

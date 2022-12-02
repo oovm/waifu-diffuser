@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 mod for_anyhow;
 mod for_image;
 mod for_serde_json;
+mod for_tungstenite;
+mod io_error;
 
 pub type DiffuserResult<T> = Result<T, DiffuserError>;
 
