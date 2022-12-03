@@ -87,6 +87,5 @@ impl WaifuDiffuserSession {
     async fn on_receive_bytes(&mut self, bytes: Vec<u8>) -> bool {
         let _ = bytes;
         unimplemented!();
-        false
     }
 }

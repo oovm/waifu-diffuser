@@ -18,9 +18,8 @@ mod text2image;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DiffuserTask {
-    pub task_id: InsensitiveKey,
-    pub user_id: InsensitiveKey,
-    pub secret: String,
+    pub user_id: Uuid,
+    pub task_id: Uuid,
     pub task: DiffuserTaskKind,
 }
 

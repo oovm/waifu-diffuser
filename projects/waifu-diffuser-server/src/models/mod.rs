@@ -1,5 +1,6 @@
 use std::{
     collections::VecDeque,
+    ops::Deref,
     path::Path,
     sync::{Arc, LazyLock},
 };
@@ -10,9 +11,20 @@ use pyke_diffusers::{
     StableDiffusionPipeline, StableDiffusionTxt2ImgOptions,
 };
 use tokio::{sync::Mutex, task::JoinHandle};
+use uuid::Uuid;
 
-use waifu_diffuser_types::{DiffuserResult, DiffuserTask, DiffuserTaskKind, InsensitiveKey, Text2ImageTask, UNetModel};
+use waifu_diffuser_types::{DiffuserResult, DiffuserTask, DiffuserTaskKind, ResourcePath, Text2ImageTask, UNetModel};
 
 use crate::utils::cuda_device;
 
 pub mod text2image;
+
+pub struct StableDiffusionWorker {
+    queue: Arc<Mutex<VecDeque<DiffuserTask>>>,
+    model: Arc<Mutex<Option<StableDiffusionInstance>>>,
+}
+
+struct StableDiffusionInstance {
+    model: UNetModel,
+    worker: StableDiffusionPipeline,
+}

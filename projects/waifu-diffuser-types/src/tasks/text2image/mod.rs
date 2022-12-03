@@ -61,7 +61,7 @@ pub struct Text2ImageReply {
 }
 
 impl Text2ImageTask {
-    pub fn as_reply(&self, step: usize, index: usize, png: Vec<u8>) -> Text2ImageReply {
+    pub fn as_reply(&self, step: usize, index: usize, png: Vec<u8>) -> DiffuserResponse {
         Text2ImageReply {
             task_id: self.task_id.clone(),
             step,
@@ -70,6 +70,7 @@ impl Text2ImageTask {
             height: self.height,
             png,
         }
+        .as_response()
     }
     pub fn with_prompts<P, N>(mut self, positive: P, negative: N) -> Self
     where

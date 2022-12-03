@@ -1,4 +1,6 @@
+use crate::StableDiffusionWorker;
 use waifu_diffuser_types::{DiffuserError, DiffuserResult, DiffuserTaskKind};
+use crate::models::StableDiffusionWorker;
 
 use super::*;
 
@@ -10,7 +12,6 @@ impl WaifuDiffuserSender {
     pub async fn send(&self, msg: Message) -> DiffuserResult<()> {
         Ok(self.shared.lock().await.send(msg).await?)
     }
-
     pub async fn emit_error(&self, error: DiffuserError, readable: bool) {
         match readable {
             true => {
@@ -24,9 +25,7 @@ impl WaifuDiffuserSender {
     }
     pub async fn emit_task(&mut self, task: DiffuserTaskKind, readable: bool) {
         match task {
-            DiffuserTaskKind::Text2Image(e) => {
-                self.emit_text2image(*e, readable).await;
-            }
+            DiffuserTaskKind::Text2Image(e) => StableDiffusionWorker::instance().,
             DiffuserTaskKind::CollectLog(_e) => {}
         }
     }

@@ -1,33 +1,24 @@
 use super::*;
 
-static SINGLETON: LazyLock<Arc<Mutex<StableDiffusionWorker>>> = LazyLock::new(|| {
-    let worker = StableDiffusionWorker { queue: Default::default(), model: None, worker: None };
-    Arc::new(Mutex::new(worker))
+static SINGLETON: LazyLock<StableDiffusionWorker> = LazyLock::new(|| StableDiffusionWorker {
+    //
+    queue: Default::default(),
+    model: Arc::new(Mutex::default()),
 });
 
-pub struct StableDiffusionWorker {
-    queue: VecDeque<DiffuserTask>,
-    model: Option<UNetModel>,
-    worker: Option<StableDiffusionPipeline>,
-}
-
 impl StableDiffusionWorker {
+    pub fn instance() -> &'static StableDiffusionWorker {
+        SINGLETON.deref()
+    }
     /// Load model from path.
-    pub async fn load_model(env: &Arc<OrtEnvironment>, path: &Path) -> DiffuserResult<()> {
-        let mut this = SINGLETON.lock().await;
-        if this.is_same_model(path) {
+    pub async fn load_model(&self, env: &Arc<OrtEnvironment>, path: &Path) -> DiffuserResult<()> {
+        let model = self.load_model_config(path).await?;
+        // skip reload
+        if self.already_loaded(&model).await {
             return Ok(());
         }
-        this.do_load_model(env, path)
-    }
-    fn is_same_model(&self, path: &Path) -> bool {
-        let _ = path;
-        false
-    }
-    fn do_load_model(&mut self, env: &Arc<OrtEnvironment>, path: &Path) -> DiffuserResult<()> {
         // release memory
-        self.model = None;
-        self.worker = None;
+        self.drop_model();
         let loading = StableDiffusionPipeline::new(
             &env,
             path,
@@ -35,7 +26,7 @@ impl StableDiffusionWorker {
         );
         match loading {
             Ok(o) => {
-                self.worker = Some(o);
+                *self.model.lock().await = Some(StableDiffusionInstance { model, worker: o });
             }
             Err(e) => {
                 unimplemented!("{}", e)
@@ -43,40 +34,49 @@ impl StableDiffusionWorker {
         }
         Ok(())
     }
+    async fn already_loaded(&self, net: &UNetModel) -> bool {
+        let model = self.model.lock().await;
+        match model.as_ref() {
+            Some(s) => s.model.get_id().eq(net.get_id()),
+            None => false,
+        }
+    }
+    async fn load_model_config(&self, path: &Path) -> DiffuserResult<UNetModel> {
+        let _ = path;
+        Ok(UNetModel::new("TEST", ResourcePath::new("DFF", "./sd").unwrap()))
+    }
     /// Drop current model and release memory.
-    pub async fn drop_model() {
-        let mut this = SINGLETON.lock().await;
-        this.model = None;
-        this.worker = None;
+    pub async fn drop_model(&self) {
+        *self.model.lock().await = None;
     }
 }
 
 impl StableDiffusionWorker {
-    pub fn spawn() -> JoinHandle<()> {
-        tokio::task::spawn_blocking(move || {
+    pub fn spawn(&self) -> JoinHandle<()> {
+        tokio::task::spawn(async {
             loop {
-                match SINGLETON.try_lock() {
-                    Ok(mut o) => match o.run() {
-                        Ok(_) => {}
-                        Err(e) => {
-                            println!("Error: {}", e);
-                        }
-                    },
-                    Err(_) => continue,
-                };
+                self.run()
             }
         })
     }
-    fn run(&mut self) -> DiffuserResult<()> {
-        match self.queue.pop_front() {
-            Some(s) => match &s.task {
-                DiffuserTaskKind::Text2Image(task) => self.run_text2img(task, s.task_id),
-                _ => unimplemented!(),
-            },
-            None => Ok(()),
+    async fn run(&self) -> Option<()> {
+        // ensure model is loaded
+        let task = self.queue.lock().await.pop_front()?;
+        let model = self.model.lock().await;
+        match &task.task {
+            DiffuserTaskKind::Text2Image(kind) => {
+                if let Err(e) = model.as_ref()?.run_text2img(kind, task.task_id, task.task_id) {
+                    unimplemented!("{}", e)
+                }
+            }
+            _ => unimplemented!(),
         }
+        Some(())
     }
-    fn run_text2img(&self, task: &Text2ImageTask, id: InsensitiveKey) -> DiffuserResult<()> {
+}
+
+impl StableDiffusionInstance {
+    pub fn run_text2img(&self, task: &Text2ImageTask, user_id: Uuid, task_id: Uuid) -> DiffuserResult<()> {
         let config = StableDiffusionTxt2ImgOptions::default()
             .with_prompts(task.positive.as_str(), Some(task.negative.as_str()))
             .with_steps(task.steps)
@@ -94,8 +94,7 @@ impl StableDiffusionWorker {
                 }
             });
         let mut scheduler = DDIMScheduler::stable_diffusion_v1_optimized_default().unwrap();
-
-        match config.run(self.worker.as_ref().unwrap(), &mut scheduler) {
+        match config.run(&self.worker, &mut scheduler) {
             Ok(images) => {
                 for (index, image) in images.iter().enumerate() {
                     let reply = match encode_png(image) {
