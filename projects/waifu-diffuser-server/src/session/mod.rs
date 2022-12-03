@@ -1,4 +1,8 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    ops::Deref,
+    sync::{Arc, LazyLock},
+    time::Duration,
+};
 
 use dashmap::DashMap;
 use futures_util::{
@@ -7,10 +11,15 @@ use futures_util::{
 };
 use log::*;
 use pyke_diffusers::OrtEnvironment;
+use serde_json::to_string;
 use tokio::{net::TcpStream, sync::Mutex, time::interval};
-use tokio_tungstenite::{accept_async_with_config, tungstenite::Error, WebSocketStream};
-use tungstenite::{protocol::WebSocketConfig, Message, Result};
+use tokio_tungstenite::{accept_async_with_config, WebSocketStream};
+use tungstenite::{protocol::WebSocketConfig, Message};
 use uuid::Uuid;
+
+use waifu_diffuser_types::{DiffuserError, DiffuserResponse, DiffuserResult, DiffuserTaskKind};
+
+use crate::StableDiffusionWorker;
 
 mod context;
 mod sender;
@@ -29,12 +38,16 @@ pub struct WaifuDiffuserServerConfig {
 
 pub struct WaifuDiffuserSession {
     user_id: Uuid,
-    receiver: SplitStream<WebSocketStream<TcpStream>>,
+    receiver: WaifuDiffuserReceiver,
     sender: WaifuDiffuserSender,
 }
 
 #[derive(Clone)]
+pub struct WaifuDiffuserReceiver {
+    shared: Arc<Mutex<SplitStream<WebSocketStream<TcpStream>>>>,
+}
+
+#[derive(Clone)]
 pub struct WaifuDiffuserSender {
-    user_id: Uuid,
     shared: Arc<Mutex<SplitSink<WebSocketStream<TcpStream>, Message>>>,
 }

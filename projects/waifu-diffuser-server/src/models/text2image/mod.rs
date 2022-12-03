@@ -1,3 +1,7 @@
+use futures_util::SinkExt;
+
+use crate::WaifuDiffuserServer;
+
 use super::*;
 
 static SINGLETON: LazyLock<StableDiffusionWorker> = LazyLock::new(|| StableDiffusionWorker {
@@ -52,10 +56,10 @@ impl StableDiffusionWorker {
 }
 
 impl StableDiffusionWorker {
-    pub fn spawn(&self) -> JoinHandle<()> {
+    pub fn spawn() -> JoinHandle<()> {
         tokio::task::spawn(async {
             loop {
-                self.run()
+                StableDiffusionWorker::instance().run().await;
             }
         })
     }
@@ -63,9 +67,9 @@ impl StableDiffusionWorker {
         // ensure model is loaded
         let task = self.queue.lock().await.pop_front()?;
         let model = self.model.lock().await;
-        match &task.task {
+        match &task.body {
             DiffuserTaskKind::Text2Image(kind) => {
-                if let Err(e) = model.as_ref()?.run_text2img(kind, task.task_id, task.task_id) {
+                if let Err(e) = model.as_ref()?.run_text2img(kind, task.task_id, task.task_id).await {
                     unimplemented!("{}", e)
                 }
             }
@@ -73,15 +77,22 @@ impl StableDiffusionWorker {
         }
         Some(())
     }
+    pub async fn accept_task(&self, task: DiffuserTask) -> DiffuserResult<()> {
+        self.queue.lock().await.push_back(task);
+        Ok(())
+    }
 }
 
 impl StableDiffusionInstance {
-    pub fn run_text2img(&self, task: &Text2ImageTask, user_id: Uuid, task_id: Uuid) -> DiffuserResult<()> {
+    pub async fn run_text2img(&self, task: &Text2ImageTask, user_id: Uuid, task_id: Uuid) -> DiffuserResult<()> {
+        let (tx, mut rx) = std::sync::mpsc::channel();
+        let tx = Arc::new(std::sync::Mutex::new(tx));
         let config = StableDiffusionTxt2ImgOptions::default()
             .with_prompts(task.positive.as_str(), Some(task.negative.as_str()))
             .with_steps(task.steps)
             .with_size(task.width, task.height)
             .callback_decoded(1, {
+                let tx = tx.clone();
                 let task = task.clone();
                 move |step, _, images| {
                     for (index, image) in images.iter().enumerate() {
@@ -89,6 +100,7 @@ impl StableDiffusionInstance {
                             Ok(o) => task.as_reply(step, index, o),
                             Err(_) => continue,
                         };
+                        tx.lock().unwrap().send(reply).ok();
                     }
                     true
                 }
@@ -101,11 +113,15 @@ impl StableDiffusionInstance {
                         Ok(o) => task.as_reply(task.steps, index, o),
                         Err(_) => continue,
                     };
+                    tx.lock().unwrap().send(reply).ok();
                 }
             }
             Err(_) => {
                 unimplemented!()
             }
+        }
+        for image in rx {
+            WaifuDiffuserServer::instance().send_response(&user_id, image, true).await.ok();
         }
         Ok(())
     }

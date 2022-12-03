@@ -1,10 +1,5 @@
-use std::{ops::Deref, sync::LazyLock};
-
-use serde_json::to_string;
-
-use waifu_diffuser_types::{DiffuserResponse, DiffuserResult};
-
 use super::*;
+use dashmap::mapref::one::Ref;
 
 mod text2image;
 
@@ -17,11 +12,20 @@ impl WaifuDiffuserServer {
     pub fn instance() -> &'static WaifuDiffuserServer {
         SINGLETON.deref()
     }
-    pub fn send_message(&self, user: &Uuid, message: Message) -> Option<bool> {
-        let sender = self.connections.get(&user)?;
-        sender.send_message(message)
+    pub async fn send_message(&self, user: &Uuid, message: Message) -> DiffuserResult<()> {
+        match self.connections.get(&user) {
+            None => {
+                unimplemented!()
+            }
+            Some(s) => {
+                let mut sender = s.sender.shared.lock().await;
+                sender.send(message).await?;
+            }
+        }
+
+        Ok(())
     }
-    pub fn send_response(&self, user: &Uuid, response: DiffuserResponse, readable: bool) -> DiffuserResult<()> {
+    pub async fn send_response(&self, user: &Uuid, response: DiffuserResponse, readable: bool) -> DiffuserResult<()> {
         let sender = match self.connections.get(&user) {
             Some(s) => s,
             None => {
@@ -30,12 +34,13 @@ impl WaifuDiffuserServer {
         };
         match readable {
             true => match to_string(&response) {
-                Ok(o) => sender.sender.send(Message::Text(o))?,
+                Ok(o) => sender.sender.send(Message::Text(o)).await?,
                 Err(_) => {
                     unimplemented!("")
                 }
             },
             false => unimplemented!("Binary response not implemented"),
         }
+        Ok(())
     }
 }

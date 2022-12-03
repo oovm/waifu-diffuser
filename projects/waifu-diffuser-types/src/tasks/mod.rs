@@ -20,7 +20,7 @@ mod text2image;
 pub struct DiffuserTask {
     pub user_id: Uuid,
     pub task_id: Uuid,
-    pub task: DiffuserTaskKind,
+    pub body: DiffuserTaskKind,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
