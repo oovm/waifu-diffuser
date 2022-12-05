@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use log::info;
 use tokio::net::{TcpListener, TcpStream};
 use uuid::Uuid;
@@ -12,6 +14,8 @@ pub async fn main() {
     let addr = "127.0.0.1:9527";
     let listener = TcpListener::bind(&addr).await.expect("Can't listen");
     info!("Listening on: {}", addr);
+    let models = Path::new(env!("MODEL_DIR")).join("aom-v3.0-safe-fp16");
+    StableDiffusionWorker::instance().load_model(&models).await.expect("failed to load model");
     StableDiffusionWorker::spawn();
     while let Ok((stream, _)) = listener.accept().await {
         accept_connection(stream).await;

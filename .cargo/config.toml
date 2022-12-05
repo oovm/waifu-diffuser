@@ -4,7 +4,7 @@ RUST_LOG = "off,waifu_diffuser=trace"
 ORT_STRATEGY = "system"
 ORT_LIB_LOCATION = "D:/models/static-onnx/target/Release/Release"
 ORT_DYLIB_PATH = "D:\\onnxruntime\\lib\\onnxruntime.dll"
-
+MODEL_DIR = "D:\\models\\AbyssOrangeMix"
 #[build]
 #rustflags = ["--cfg=web_sys_unstable_apis"]
 

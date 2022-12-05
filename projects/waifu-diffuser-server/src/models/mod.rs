@@ -26,5 +26,5 @@ pub struct StableDiffusionWorker {
 
 struct StableDiffusionInstance {
     model: UNetModel,
-    worker: StableDiffusionPipeline,
+    worker: Arc<StableDiffusionPipeline>,
 }

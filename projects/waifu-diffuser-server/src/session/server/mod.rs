@@ -1,6 +1,7 @@
 use super::*;
 
-mod text2image;
+mod recv;
+mod send;
 
 static SINGLETON: LazyLock<WaifuDiffuserServer> = LazyLock::new(|| WaifuDiffuserServer {
     environment: OrtEnvironment::default().into_arc(),
@@ -10,6 +11,9 @@ static SINGLETON: LazyLock<WaifuDiffuserServer> = LazyLock::new(|| WaifuDiffuser
 impl WaifuDiffuserServer {
     pub fn instance() -> &'static WaifuDiffuserServer {
         SINGLETON.deref()
+    }
+    pub fn environment() -> Arc<OrtEnvironment> {
+        SINGLETON.environment.clone()
     }
     pub async fn send_message(&self, user: &Uuid, message: Message) -> DiffuserResult<()> {
         match self.connections.get(&user) {

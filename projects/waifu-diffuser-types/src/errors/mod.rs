@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 mod for_anyhow;
 mod for_image;
 mod for_serde_json;
+#[cfg(feature = "tungstenite")]
 mod for_tungstenite;
 mod io_error;
 
