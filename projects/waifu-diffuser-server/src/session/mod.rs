@@ -38,6 +38,7 @@ pub struct WaifuDiffuserServerConfig {
 
 pub struct WaifuDiffuserSession {
     user_id: Uuid,
+    readable: bool,
     receiver: WaifuDiffuserReceiver,
     sender: WaifuDiffuserSender,
 }

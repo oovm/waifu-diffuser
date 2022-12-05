@@ -15,7 +15,7 @@ use uuid::Uuid;
 
 use waifu_diffuser_types::{DiffuserResult, DiffuserTask, DiffuserTaskKind, ResourcePath, Text2ImageTask, UNetModel};
 
-use crate::utils::cuda_device;
+use crate::{utils::cuda_device, WaifuDiffuserServer};
 
 pub mod text2image;
 

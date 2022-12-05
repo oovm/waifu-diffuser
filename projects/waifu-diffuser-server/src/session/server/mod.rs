@@ -1,5 +1,4 @@
 use super::*;
-use dashmap::mapref::one::Ref;
 
 mod text2image;
 

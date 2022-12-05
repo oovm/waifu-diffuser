@@ -1,7 +1,7 @@
 use std::fmt::Formatter;
 
 use serde::{
-    de::{Error, MapAccess, Visitor},
+    de::{MapAccess, Visitor},
     Deserializer,
 };
 
@@ -41,9 +41,9 @@ impl<'i, 'de> Visitor<'de> for Text2ImageVisitor<'i> {
     {
         while let Some(key) = map.next_key::<&str>()? {
             match key {
-                "id" => {
-                    self.place.task_id = map.next_value()?;
-                }
+                // "id" => {
+                //     self.place.task_id = map.next_value()?;
+                // }
                 "text" => {
                     // self.place.text = map.next_value()?;
                 }
@@ -73,9 +73,6 @@ impl<'i, 'de> Visitor<'de> for Text2ImageVisitor<'i> {
                     let _: serde_json::Value = map.next_value()?;
                 }
             }
-        }
-        if self.place.task_id.is_empty() {
-            Err(Error::missing_field("id"))?
         }
         Ok(())
     }

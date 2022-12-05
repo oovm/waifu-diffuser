@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
-use package_key::InsensitiveKey;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use crate::DiffuserScheduler;
 
 pub use self::{
     collect_log::{CollectLogReply, CollectLogTask},

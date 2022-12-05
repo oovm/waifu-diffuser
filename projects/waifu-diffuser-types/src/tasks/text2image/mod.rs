@@ -1,15 +1,9 @@
-use package_key::InsensitiveKey;
-
-use crate::DiffuserScheduler;
-
 use super::*;
 
 mod der;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Text2ImageTask {
-    /// UUID of the task, used for accept or cancel task
-    pub task_id: InsensitiveKey,
     /// positive prompts of the image
     pub positive: String,
     /// negative prompts of the image
@@ -31,7 +25,6 @@ pub struct Text2ImageTask {
 impl Default for Text2ImageTask {
     fn default() -> Self {
         Self {
-            task_id: Default::default(),
             positive: "masterpiece, best quality".to_string(),
             negative: "".to_string(),
             width: 256,
@@ -47,7 +40,7 @@ impl Default for Text2ImageTask {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Text2ImageReply {
     /// UUID of the task, used to identify the task
-    pub task_id: InsensitiveKey,
+    pub task_id: Uuid,
     /// Step of this diffusion
     pub step: usize,
     /// index of the image in the batch
@@ -61,16 +54,9 @@ pub struct Text2ImageReply {
 }
 
 impl Text2ImageTask {
-    pub fn as_reply(&self, step: usize, index: usize, png: Vec<u8>) -> DiffuserResponse {
-        Text2ImageReply {
-            task_id: self.task_id.clone(),
-            step,
-            index: self.start_id + index,
-            width: self.width,
-            height: self.height,
-            png,
-        }
-        .as_response()
+    pub fn as_reply(&self, task_id: Uuid, step: usize, index: usize, png: Vec<u8>) -> DiffuserResponse {
+        Text2ImageReply { task_id, step, index: self.start_id + index, width: self.width, height: self.height, png }
+            .as_response()
     }
     pub fn with_prompts<P, N>(mut self, positive: P, negative: N) -> Self
     where

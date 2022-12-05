@@ -1,7 +1,3 @@
-use futures_util::SinkExt;
-
-use crate::WaifuDiffuserServer;
-
 use super::*;
 
 static SINGLETON: LazyLock<StableDiffusionWorker> = LazyLock::new(|| StableDiffusionWorker {
@@ -22,7 +18,7 @@ impl StableDiffusionWorker {
             return Ok(());
         }
         // release memory
-        self.drop_model();
+        self.drop_model().await;
         let loading = StableDiffusionPipeline::new(
             &env,
             path,
@@ -57,9 +53,11 @@ impl StableDiffusionWorker {
 
 impl StableDiffusionWorker {
     pub fn spawn() -> JoinHandle<()> {
-        tokio::task::spawn(async {
+        log::info!("Stable diffusion worker awake");
+        tokio::spawn(async {
             loop {
-                StableDiffusionWorker::instance().run().await;
+                StableDiffusionWorker::instance();
+                // StableDiffusionWorker::instance().run().await;
             }
         })
     }
@@ -85,7 +83,7 @@ impl StableDiffusionWorker {
 
 impl StableDiffusionInstance {
     pub async fn run_text2img(&self, task: &Text2ImageTask, user_id: Uuid, task_id: Uuid) -> DiffuserResult<()> {
-        let (tx, mut rx) = std::sync::mpsc::channel();
+        let (tx, rx) = std::sync::mpsc::channel();
         let tx = Arc::new(std::sync::Mutex::new(tx));
         let config = StableDiffusionTxt2ImgOptions::default()
             .with_prompts(task.positive.as_str(), Some(task.negative.as_str()))
@@ -97,7 +95,7 @@ impl StableDiffusionInstance {
                 move |step, _, images| {
                     for (index, image) in images.iter().enumerate() {
                         let reply = match encode_png(image) {
-                            Ok(o) => task.as_reply(step, index, o),
+                            Ok(o) => task.as_reply(task_id, step, index, o),
                             Err(_) => continue,
                         };
                         tx.lock().unwrap().send(reply).ok();
@@ -110,7 +108,7 @@ impl StableDiffusionInstance {
             Ok(images) => {
                 for (index, image) in images.iter().enumerate() {
                     let reply = match encode_png(image) {
-                        Ok(o) => task.as_reply(task.steps, index, o),
+                        Ok(o) => task.as_reply(task_id, task.steps, index, o),
                         Err(_) => continue,
                     };
                     tx.lock().unwrap().send(reply).ok();

@@ -19,6 +19,7 @@ impl WaifuDiffuserServer {
 
         let session = WaifuDiffuserSession {
             user_id: user,
+            readable: false,
             sender: WaifuDiffuserSender { shared: Arc::new(Mutex::new(sender)) },
             receiver: WaifuDiffuserReceiver { shared: Arc::new(Mutex::new(receiver)) },
         };
@@ -26,18 +27,23 @@ impl WaifuDiffuserServer {
         self.connections.insert(user, session);
         Ok(sender)
     }
-    pub async fn start(&self, user: Uuid) -> bool {
-        self.try_start(user).await.is_some()
-    }
-    async fn try_start(&self, user: Uuid) -> Option<()> {
-        let connect = self.connections.get(&user)?;
-        let send = connect.sender.clone();
-        let recv = connect.receiver.clone();
-        start_handler(send, recv).await.await.ok()
+    pub async fn start(&self, user: Uuid) -> DiffuserResult<()> {
+        let (tx, rx) = match self.connections.get(&user) {
+            None => {
+                unimplemented!("not found")
+            }
+            Some(s) => (s.sender.clone(), s.receiver.clone()),
+        };
+        match start_handler(tx, rx).await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                unimplemented!("{e}")
+            }
+        }
     }
 }
 
-pub async fn start_handler(sender: WaifuDiffuserSender, receiver: WaifuDiffuserReceiver) -> JoinHandle<()> {
+pub fn start_handler(sender: WaifuDiffuserSender, receiver: WaifuDiffuserReceiver) -> JoinHandle<()> {
     let mut interval = interval(Duration::from_millis(10000));
     tokio::spawn(async move {
         loop {
