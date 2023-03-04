@@ -3,12 +3,13 @@ use std::path::{Path, PathBuf};
 
 mod reader;
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiffuserModel {
     kind: ModelKind,
     path: PathBuf,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ModelKind {
     /// A VAE model used for stable diffusion 1.
     Vae,
@@ -22,14 +23,7 @@ pub enum ModelKind {
     Clip2,
 }
 
-impl DiffuserModel {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
-        let path = path.as_ref().canonicalize().unwrap();
-        todo!()
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ClipModel {
     name: String,
 }
