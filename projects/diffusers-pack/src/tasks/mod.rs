@@ -5,5 +5,3 @@ pub struct DiffuserTask {
     pub output: PathBuf,
 }
 
-pub mod secrets;
-pub mod unique;

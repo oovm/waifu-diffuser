@@ -1,4 +1,4 @@
-use crate::{ClipModel, DanBooruModel};
+use crate::{ClipModel, DanBooruModel, UNetModel, VaeModel};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -15,13 +15,18 @@ pub struct DiffuserModel {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum ModelKind {
     /// A ResNet model used for find prompts.
+    #[serde(rename = "deep_danbooru")]
     DeepDanBooru(Box<DanBooruModel>),
     /// A VAE model used for stable diffusion 1.
-    Vae,
+    #[serde(rename = "vae")]
+    Vae(Box<VaeModel>),
     /// A U-Net model used for stable diffusion 1.
-    UNet,
-    /// A U-Net model used for stable diffusion 2.
+    #[serde(rename = "unet")]
+    UNet(Box<UNetModel>),
+    /// A Clip model used for stable diffusion 1.
+    #[serde(rename = "clip")]
     Clip(Box<ClipModel>),
 }

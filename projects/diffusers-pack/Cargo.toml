@@ -1,5 +1,5 @@
 [package]
-name = "waifu-diffuser-types"
+name = "diffusers-pack"
 version = "0.0.0"
 authors = ["Aster <192607617@qq.com>"]
 description = "..."
@@ -12,13 +12,8 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0.130", features = ["derive"] }
 diffusers = "0.2.1"
-sevenz-rust = { version = "0.2.0", features = ["compress"] }
-serde_json5 = "0.1.0"
-serde-aux = "4.1.2"
-
-[dependencies.diagnostic-quick]
-version = "0.3.6"
-features = []
+sevenz-rust = "0.2.0"
+safetensors = "0.2.8"
 
 [dev-dependencies]
 
