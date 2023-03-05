@@ -1,8 +1,11 @@
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{
+    stream::{Next, SplitStream},
+    SinkExt, StreamExt,
+};
 use log::*;
 use std::{net::SocketAddr, time::Duration};
 use tokio::net::{TcpListener, TcpStream};
-use tokio_tungstenite::{accept_async, tungstenite::Error};
+use tokio_tungstenite::{accept_async, tungstenite::Error, WebSocketStream};
 use tungstenite::{Message, Result};
 
 async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
@@ -14,14 +17,41 @@ async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
     }
 }
 
+pub struct WaifuDiffuserServer {}
+
+impl WaifuDiffuserServer {
+    pub fn new() -> Self {
+        Self {}
+    }
+    pub async fn on_receive(&self, message: Option<Result<Message, Error>>) -> bool {
+        match message {
+            None => {}
+            Some(s) => {}
+        }
+    }
+}
+
+async fn receive_handle(context: &mut WaifuDiffuserServer, message: Option<Result<Message, Error>>) -> Option<bool> {
+    match message? {
+        Ok(_) => {}
+        Err(s) => {
+            error!("Error processing connection: {}", s);
+        }
+    }
+}
+
+pub struct Application {}
+
 async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
     let ws_stream = accept_async(stream).await.expect("Failed to accept");
     info!("New WebSocket connection: {}", peer);
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
+    match ws_receiver.next().await {
+        None => {}
+        Some(s) => {}
+    }
+
     let mut interval = tokio::time::interval(Duration::from_millis(1000));
-
-    // Echo incoming WebSocket messages and send a message periodically every second.
-
     loop {
         tokio::select! {
             msg = ws_receiver.next() => {
@@ -42,7 +72,6 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
             }
         }
     }
-
     Ok(())
 }
 
