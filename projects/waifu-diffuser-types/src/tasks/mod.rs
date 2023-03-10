@@ -1,11 +1,28 @@
-use crate::DiffuserModel;
-use diffusers::schedulers::ddim::{DDIMScheduler, DDIMSchedulerConfig};
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::models::DiffuserScheduler;
+
+pub use self::secrets::SecretKeeper;
+pub use self::unique::UniqueKey;
+
+mod secrets;
+mod unique;
 mod short_action;
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DiffuserTask {
+    Text2Image(Box<Text2ImageTask>),
+    CollectLog(Box<CollectLogTask>),
+}
+
+pub enum DiffuserAnswer {
+    Text2Image(Box<Text2ImageAnswer>),
+    CollectLog(Box<CollectLogAnswer>),
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Text2ImageTask {
@@ -16,7 +33,7 @@ pub struct Text2ImageTask {
     pub width: u32,
     pub height: u32,
     pub step: u32,
-    pub scheduler: Scheduler,
+    pub scheduler: DiffuserScheduler,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -35,8 +52,6 @@ pub struct Text2ImageAnswer {
     pub png: Vec<u8>,
 }
 
-pub mod secrets;
-pub mod unique;
 
 pub struct CollectLogTask {
     pub id: u128,
