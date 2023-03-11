@@ -1,23 +1,26 @@
+use std::{path::Path, sync::LazyLock};
+
+use waifu_diffuser_types::DiffuserResult;
+
 use super::*;
 
-static mut SINGLETON: MaybeUninit<WaifuDiffuserServer> = MaybeUninit::uninit();
-static ONCE: Once = Once::new();
+mod text2image;
+
+pub static GLOBAL_RUNNER: LazyLock<WaifuDiffuserServer> = LazyLock::new(|| {
+    let environment = OrtEnvironment::default().into_arc();
+    WaifuDiffuserServer { environment, diffuser: Mutex::new(None) }
+});
 
 impl WaifuDiffuserServer {
-    pub fn singleton() -> &'static WaifuDiffuserServer {
-        let environment = OrtEnvironment::default().into_arc();
-        unsafe {
-            ONCE.call_once(|| {
-                let singleton = WaifuDiffuserServer { diffuser: Mutex::new(None) };
-                SINGLETON.write(singleton);
-            });
-            SINGLETON.assume_init_ref()
-        }
-    }
-    pub async fn load_diffuser(&self) {
+    pub async fn drop_diffuser(&self) {
         let mut diffuser = self.diffuser.lock().await;
-
-        let mut scheduler = EulerDiscreteScheduler::stable_diffusion_v1_optimized_default()?;
+        *diffuser = None;
+    }
+    pub async fn load_diffuser(&self, config: &Path) -> DiffuserResult<&StableDiffusionPipeline> {
+        let guard = self.diffuser.try_lock().unwrap();
+        if let Some(diffuser) = guard.as_ref() {
+            return Ok(diffuser);
+        }
         let cuda = DiffusionDevice::CUDA(
             0,
             Some(CUDADeviceOptions {
@@ -27,13 +30,15 @@ impl WaifuDiffuserServer {
             }),
         );
         let pipeline = StableDiffusionPipeline::new(
-            &environment,
-            "./pyke-diffusers-sd15-fp16/",
+            &self.environment,
+            config,
             StableDiffusionOptions {
-                devices: DiffusionDeviceControl { unet: cuda.clone(), ..Default::default() },
+                devices: DiffusionDeviceControl { unet: cuda, ..Default::default() },
                 ..Default::default()
             },
         )?;
+
         *diffuser = Some(pipeline);
+        Ok(diffuser.as_ref().unwrap())
     }
 }

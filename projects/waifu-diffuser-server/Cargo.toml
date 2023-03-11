@@ -26,6 +26,7 @@ bincode = "2.0.0-rc.2"
 
 [dependencies.waifu-diffuser-types]
 path = "../waifu-diffuser-types"
+features = ["anyhow"]
 
 [dev-dependencies]
 

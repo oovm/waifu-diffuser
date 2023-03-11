@@ -43,13 +43,3 @@ pub enum ModelKind {
     #[serde(rename = "clip")]
     Clip(Box<ClipModel>),
 }
-
-impl DiffuserRunner {
-    pub fn find_models(&self, path: &Path) -> Vec<DiffuserModel> {
-        todo!()
-    }
-
-    pub fn clear_memory(&self) {
-        todo!()
-    }
-}
