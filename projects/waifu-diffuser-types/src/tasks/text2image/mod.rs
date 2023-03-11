@@ -1,10 +1,13 @@
-use super::*;
 use crate::DiffuserScheduler;
 
-#[derive(Debug, Serialize, Deserialize)]
+use super::*;
+
+mod der;
+
+#[derive(Debug, Serialize)]
 pub struct Text2ImageTask {
     /// UUID of the task, used for accept or cancel task
-    pub id: Uuid,
+    pub id: String,
     /// index of the image in the batch
     pub positive: String,
     /// index of the image in the batch
@@ -17,6 +20,20 @@ pub struct Text2ImageTask {
     pub step: u32,
     /// index of the image in the batch
     pub scheduler: DiffuserScheduler,
+}
+
+impl Default for Text2ImageTask {
+    fn default() -> Self {
+        Self {
+            id: Default::default(),
+            positive: "masterpiece, best quality".to_string(),
+            negative: "".to_string(),
+            width: 256,
+            height: 256,
+            step: 20,
+            scheduler: Default::default(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

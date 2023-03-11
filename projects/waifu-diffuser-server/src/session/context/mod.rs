@@ -1,5 +1,6 @@
+use waifu_diffuser_types::{DiffuserError, DiffuserTask, Text2ImageTask};
+
 use super::*;
-use waifu_diffuser_types::{DiffuserTask, Text2ImageTask};
 
 impl WaifuDiffuserSession {
     pub async fn new(stream: TcpStream) -> std::result::Result<WaifuDiffuserSession, tungstenite::Error> {
@@ -64,14 +65,10 @@ impl WaifuDiffuserSession {
         false
     }
     async fn on_receive_texts(&mut self, text: String) -> bool {
-        let task: DiffuserTask = match serde_json::from_str(&text) {
-            Ok(t) => t,
-            Err(e) => {
-                error!("Error parsing task: {}", e);
-                return false;
-            }
+        match serde_json::from_str::<DiffuserTask>(&text) {
+            Ok(task) => self.emit_task(task, true).await,
+            Err(e) => self.emit_error(DiffuserError::from(e), true).await,
         };
-        self.emit_task(task, true).await;
         false
     }
     async fn on_receive_bytes(&mut self, bytes: Vec<u8>) -> bool {
@@ -79,6 +76,16 @@ impl WaifuDiffuserSession {
         unimplemented!();
         false
     }
+}
+
+impl WaifuDiffuserSession {
+    async fn emit_error(&mut self, error: DiffuserError, readable: bool) {
+        let text = serde_json::to_string(&error).unwrap();
+        if let Err(e) = self.sender.send(Message::Text(text)).await {
+            error!("Error sending error: {}", e)
+        }
+    }
+
     async fn emit_task(&mut self, task: DiffuserTask, readable: bool) {
         match task {
             DiffuserTask::Text2Image(e) => {
