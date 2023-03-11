@@ -77,8 +77,10 @@ fn create_writer(path: &Path) -> Result<SevenZWriter<File>, Error> {
 
 #[test]
 fn test_writer() {
-    let model =
-        DiffuserModel { kind: ModelKind::Clip(Box::new(ClipModel::new("Grift".to_string(), "Gft".to_string()))), path: Default::default() };
+    let model = DiffuserModel {
+        kind: ModelKind::Clip(Box::new(ClipModel::new("Grift".to_string(), "Gft".to_string()))),
+        path: Default::default(),
+    };
     model.save_meta("test.7z").unwrap();
 }
 
@@ -108,26 +110,19 @@ fn main() {
                 entry.copy_date_from(old);
             }
             let mut content = String::new();
-            decoder
-                .decoded_reader()?
-                .read_to_string(&mut content)
-                .map_err(|e| sevenz_rust::Error::io(e))?;
+            decoder.decoded_reader()?.read_to_string(&mut content).map_err(|e| sevenz_rust::Error::io(e))?;
             content.push_str("\nmodified");
 
             sw.push_archive_entry(entry, Some(content.as_bytes()))?;
-        } else {
-            let mut unpack_sizes: Vec<_> =
-                decoder.unpack_sizes().iter().map(|s| *s as usize).collect();
+        }
+        else {
+            let mut unpack_sizes: Vec<_> = decoder.unpack_sizes().iter().map(|s| *s as usize).collect();
 
             unpack_sizes.pop();
-            sw.push_encoded_entry(
-                decoder.entry().clone(),
-                unpack_sizes,
-                decoder.undecoded_reader()?,
-            )?;
+            sw.push_encoded_entry(decoder.entry().clone(), unpack_sizes, decoder.undecoded_reader()?)?;
         }
         Ok(true)
     })
-        .expect("OK");
+    .expect("OK");
     sw.finish().unwrap();
 }

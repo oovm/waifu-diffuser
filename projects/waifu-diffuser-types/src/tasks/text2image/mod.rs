@@ -1,3 +1,4 @@
+use crate::DiffuserScheduler;
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize)]

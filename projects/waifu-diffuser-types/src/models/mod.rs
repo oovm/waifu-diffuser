@@ -1,7 +1,7 @@
-use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
 
-use crate::{ClipModel, DanBooruModel, DDIMAdvance, UNetModel, VaeModel};
+use crate::{ClipModel, DanBooruModel, UNetModel, VaeModel};
 
 pub mod clip;
 pub mod deep_dan_booru;
@@ -12,7 +12,7 @@ pub mod vae;
 #[derive(Clone, Debug)]
 pub struct DiffuserRunner {
     models: DiffuserModel,
-    vae: Option<StableDiffusionConfig>,
+    // vae: Option<StableDiffusionConfig>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -26,8 +26,6 @@ pub enum EncodingMode {
     Bincode,
     Json,
 }
-
-
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
