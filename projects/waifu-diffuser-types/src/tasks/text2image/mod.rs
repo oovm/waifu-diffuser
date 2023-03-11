@@ -17,7 +17,9 @@ pub struct Text2ImageTask {
     /// index of the image in the batch
     pub height: u32,
     /// index of the image in the batch
-    pub step: u32,
+    pub batch: u8,
+    /// index of the image in the batch
+    pub step: u8,
     /// index of the image in the batch
     pub scheduler: DiffuserScheduler,
 }
@@ -30,6 +32,7 @@ impl Default for Text2ImageTask {
             negative: "".to_string(),
             width: 256,
             height: 256,
+            batch: 1,
             step: 20,
             scheduler: Default::default(),
         }
@@ -39,15 +42,22 @@ impl Default for Text2ImageTask {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Text2ImageReply {
     /// UUID of the task
-    pub id: Uuid,
+    pub id: String,
     /// index of the image in the batch
     pub index: u8,
     /// Step of this diffusion
-    pub step: u32,
+    pub step: u8,
     /// width of the image
     pub width: u32,
     /// height of the image
     pub height: u32,
     /// png image
     pub png: Vec<u8>,
+}
+
+impl Text2ImageReply {
+    #[allow(clippy::wrong_self_convention)]
+    pub fn as_response(self) -> DiffuserResponse {
+        DiffuserResponse { code: 200, kind: DiffuserReply::Text2Image(Box::new(self)) }
+    }
 }

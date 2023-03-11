@@ -1,7 +1,6 @@
 use std::{
     mem::MaybeUninit,
-    net::SocketAddr,
-    sync::{Mutex, Once},
+    sync::{Arc, Once},
     time::Duration,
 };
 
@@ -10,11 +9,16 @@ use futures_util::{
     SinkExt, StreamExt,
 };
 use log::*;
+use pyke_diffusers::{
+    ArenaExtendStrategy, CUDADeviceOptions, CuDNNConvolutionAlgorithmSearch, DiffusionDevice, DiffusionDeviceControl,
+    EulerDiscreteScheduler, OrtEnvironment, SchedulerOptimizedDefaults, StableDiffusionOptions, StableDiffusionPipeline,
+};
 use tokio::{
     net::TcpStream,
+    sync::Mutex,
     time::{interval, Interval},
 };
-use tokio_tungstenite::{accept_async, accept_async_with_config, tungstenite::Error, WebSocketStream};
+use tokio_tungstenite::{accept_async_with_config, tungstenite::Error, WebSocketStream};
 use tungstenite::{protocol::WebSocketConfig, Message, Result};
 
 mod server;
@@ -22,7 +26,8 @@ mod server;
 mod context;
 
 pub struct WaifuDiffuserServer {
-    inner: Mutex<u8>,
+    environment: Arc<OrtEnvironment>,
+    diffuser: Mutex<Option<StableDiffusionPipeline>>,
 }
 
 pub struct WaifuDiffuserSession {
