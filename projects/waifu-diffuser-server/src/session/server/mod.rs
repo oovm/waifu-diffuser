@@ -1,4 +1,5 @@
 use std::{future::Future, path::Path};
+use tokio::sync::MutexGuard;
 
 use waifu_diffuser_types::DiffuserResult;
 
@@ -11,15 +12,10 @@ impl WaifuDiffuserServer {
         let mut diffuser = self.diffuser.lock().await;
         *diffuser = None;
     }
-    pub async fn load_diffuser<P, T, F>(&self, load: P) -> DiffuserResult<&StableDiffusionPipeline>
-    where
-        P: AsRef<Path>,
-        T: Future<Output = F>,
-        F: Fn(&StableDiffusionPipeline) -> DiffuserResult<()>,
-    {
+    pub async fn load_diffuser(&self) -> DiffuserResult<MutexGuard<Option<StableDiffusionPipeline>>> {
         let mut guard = self.diffuser.try_lock().unwrap();
         if let Some(diffuser) = guard.as_ref() {
-            return f(diffuser);
+            return Ok(guard);
         }
         let cuda = DiffusionDevice::CUDA(
             0,
@@ -31,13 +27,13 @@ impl WaifuDiffuserServer {
         );
         let pipeline = StableDiffusionPipeline::new(
             &self.environment,
-            load.as_ref(),
+            "./stable-diffusion-v1-5/",
             StableDiffusionOptions {
                 devices: DiffusionDeviceControl { unet: cuda, ..Default::default() },
                 ..Default::default()
             },
         )?;
         *guard = Some(pipeline);
-        f(guard.as_ref().unwrap())
+        Ok(guard)
     }
 }
