@@ -1,6 +1,5 @@
 use std::{
-    mem::MaybeUninit,
-    sync::{Arc, Once},
+    sync::{Arc, LazyLock},
     time::Duration,
 };
 
@@ -24,6 +23,11 @@ use tungstenite::{protocol::WebSocketConfig, Message, Result};
 mod server;
 
 mod context;
+
+pub static GLOBAL_RUNNER: LazyLock<WaifuDiffuserServer> = LazyLock::new(|| {
+    let environment = OrtEnvironment::default().into_arc();
+    WaifuDiffuserServer { environment, diffuser: Mutex::new(None) }
+});
 
 pub struct WaifuDiffuserServer {
     environment: Arc<OrtEnvironment>,
