@@ -36,7 +36,7 @@ impl WaifuDiffuserSession {
                                 Ok(png) => png,
                                 Err(_) => continue,
                             };
-                            let reply = task.reply_with(steps, index, png);
+                            let reply = task.as_reply(steps, index, png);
                             tx.clone().lock().unwrap().send(reply).ok();
                         }
                         true
