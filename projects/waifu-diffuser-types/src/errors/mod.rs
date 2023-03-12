@@ -1,3 +1,8 @@
+use std::{
+    error::Error,
+    fmt::{Debug, Display, Formatter},
+};
+
 use serde::{Deserialize, Serialize};
 
 // mod for_7z;
@@ -6,7 +11,9 @@ mod for_anyhow;
 mod for_image;
 mod for_serde_json;
 
-#[derive(Debug, Serialize, Deserialize)]
+pub type DiffuserResult<T> = Result<T, DiffuserError>;
+
+#[derive(Serialize, Deserialize)]
 pub struct DiffuserError {
     code: i32,
     kind: Box<DiffuserErrorKind>,
@@ -21,7 +28,35 @@ pub enum DiffuserErrorKind {
     CustomError { message: String },
 }
 
-pub type DiffuserResult<T> = Result<T, DiffuserError>;
+impl Error for DiffuserError {}
+
+impl Debug for DiffuserError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self.kind, f)
+    }
+}
+
+impl Display for DiffuserError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self.kind, f)
+    }
+}
+
+impl Display for DiffuserErrorKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DiffuserErrorKind::IOError { message, path } => {
+                write!(f, "IOError: {} at {}", message, path)
+            }
+            DiffuserErrorKind::DecodeError { message } => {
+                write!(f, "DecodeError: {}", message)
+            }
+            DiffuserErrorKind::CustomError { message } => {
+                write!(f, "CustomError: {}", message)
+            }
+        }
+    }
+}
 
 impl DiffuserError {
     pub fn decode_error<S>(message: S) -> Self

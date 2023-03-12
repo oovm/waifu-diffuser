@@ -5,7 +5,6 @@ use crate::{ClipModel, DanBooruModel, UNetModel, VaeModel};
 
 pub mod clip;
 pub mod deep_dan_booru;
-pub mod model_path;
 mod reader;
 pub mod unet;
 pub mod vae;
