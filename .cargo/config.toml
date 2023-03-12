@@ -1,7 +1,7 @@
 [env]
 VSLANG = "1033"
 RUST_LOG = "off,waifu_diffuser=trace"
-#ORT_STRATEGY = "system"
+ORT_STRATEGY = "system"
 ORT_LIB_LOCATION = "D:\\onnxruntime\\lib"
 ORT_DYLIB_PATH = "D:\\onnxruntime\\lib\\onnxruntime.dll"
 
