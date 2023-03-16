@@ -34,7 +34,7 @@ impl WaifuDiffuserServer {
             None => Err(DiffuserError::custom_error("User not found", -1004))?,
         };
         match session.readable {
-            true => match to_string(&response) {
+            true => match serde_json::to_string(&response) {
                 Ok(o) => session.sender.send(Message::Text(o)).await?,
                 Err(_) => {
                     unimplemented!("")

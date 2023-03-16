@@ -3,7 +3,7 @@ use super::*;
 impl WaifuDiffuserSender {
     pub async fn on_receive_texts(&self, text: String) -> bool {
         match serde_json::from_str::<DiffuserTask>(&text) {
-            Ok(task) => self.emit_task(task, true).await,
+            Ok(task) => self.emit_task(task).await,
             Err(e) => self.emit_error(DiffuserError::from(e), true).await,
         };
         false

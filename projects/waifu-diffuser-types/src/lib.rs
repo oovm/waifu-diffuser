@@ -9,6 +9,7 @@ pub use crate::{
     tasks::*,
 };
 
+mod downloader;
 mod errors;
 mod models;
 mod tasks;
