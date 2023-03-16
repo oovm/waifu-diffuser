@@ -28,16 +28,14 @@ impl WaifuDiffuserServer {
 
         Ok(())
     }
-    pub async fn send_response(&self, user: &Uuid, response: DiffuserResponse, readable: bool) -> DiffuserResult<()> {
-        let sender = match self.connections.get(&user) {
+    pub async fn send_response(&self, user: &Uuid, response: DiffuserResponse) -> DiffuserResult<()> {
+        let session = match self.connections.get(&user) {
             Some(s) => s,
-            None => {
-                unimplemented!("")
-            }
+            None => Err(DiffuserError::custom_error("User not found", -1004))?,
         };
-        match readable {
+        match session.readable {
             true => match to_string(&response) {
-                Ok(o) => sender.sender.send(Message::Text(o)).await?,
+                Ok(o) => session.sender.send(Message::Text(o)).await?,
                 Err(_) => {
                     unimplemented!("")
                 }

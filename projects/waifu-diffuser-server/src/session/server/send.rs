@@ -15,12 +15,12 @@ impl WaifuDiffuserSender {
     pub async fn do_ping(&self) {
         let ping = "WaifuDiffuser".as_bytes().to_vec();
         if let Err(e) = self.send(Message::Ping(ping)).await {
-            error!("Error sending ping: {}", e)
+            log::error!("Error sending ping: {}", e)
         }
     }
     pub async fn do_pong(&self, ping: Vec<u8>) -> bool {
         if let Err(e) = self.send(Message::Pong(ping)).await {
-            error!("Error sending pong: {}", e)
+            log::error!("Error sending pong: {}", e)
         }
         false
     }
@@ -42,7 +42,7 @@ impl WaifuDiffuserSender {
             }
         }
     }
-    pub async fn emit_task(&self, task: DiffuserTask, readable: bool) {
+    pub async fn emit_task(&self, task: DiffuserTask) {
         let result = match &task.body {
             DiffuserTaskKind::Text2Image(_) => StableDiffusionWorker::instance().accept_task(task).await,
             DiffuserTaskKind::CollectLog(_) => {

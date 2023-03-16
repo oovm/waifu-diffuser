@@ -1,7 +1,5 @@
-use serde_json::from_reader;
-use std::fs::File;
-
 use super::*;
+use pyke_diffusers::EulerDiscreteScheduler;
 
 static SINGLETON: LazyLock<StableDiffusionWorker> = LazyLock::new(|| StableDiffusionWorker {
     //
@@ -15,6 +13,7 @@ impl StableDiffusionWorker {
     }
     /// Load model from path.
     pub async fn load_model(&self, config_path: &Path) -> DiffuserResult<()> {
+        log::info!("Loading model from {}", config_path.canonicalize()?.display());
         let model = self.load_model_config(config_path).await?;
         // skip reload
         if self.already_loaded(&model).await {
@@ -29,6 +28,7 @@ impl StableDiffusionWorker {
         );
         match loading {
             Ok(o) => {
+                log::info!("Model loaded");
                 *self.model.lock().await = Some(StableDiffusionInstance { model, worker: Arc::new(o) });
             }
             Err(e) => {
@@ -115,7 +115,7 @@ pub async fn run_text2img(
                     true
                 }
             });
-        let mut scheduler = DDIMScheduler::stable_diffusion_v1_optimized_default().unwrap();
+        let mut scheduler = EulerDiscreteScheduler::stable_diffusion_v1_optimized_default().unwrap();
         match config.run(&worker, &mut scheduler) {
             Ok(images) => {
                 for (index, image) in images.iter().enumerate() {
@@ -132,7 +132,7 @@ pub async fn run_text2img(
         }
     });
     for image in rx {
-        WaifuDiffuserServer::instance().send_response(&user_id, image, true).await.ok();
+        WaifuDiffuserServer::instance().send_response(&user_id, image).await.ok();
     }
     Ok(())
 }

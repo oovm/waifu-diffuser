@@ -7,13 +7,12 @@ use std::{
 
 use image::{codecs::png::PngEncoder, ColorType, DynamicImage, EncodableLayout, ImageEncoder};
 use pyke_diffusers::{
-    DDIMScheduler, DiffusionDeviceControl, OrtEnvironment, SchedulerOptimizedDefaults, StableDiffusionOptions,
-    StableDiffusionPipeline, StableDiffusionTxt2ImgOptions,
+    DiffusionDeviceControl, SchedulerOptimizedDefaults, StableDiffusionOptions, StableDiffusionPipeline,
+    StableDiffusionTxt2ImgOptions,
 };
 use tokio::{sync::Mutex, task::JoinHandle};
-use uuid::Uuid;
 
-use waifu_diffuser_types::{DiffuserResult, DiffuserTask, DiffuserTaskKind, ResourcePath, Text2ImageTask, UNetModel};
+use waifu_diffuser_types::{DiffuserResult, DiffuserTask, DiffuserTaskKind, ResourcePath, Text2ImageTask, UNetModel, Uuid};
 
 use crate::{utils::cuda_device, WaifuDiffuserServer};
 

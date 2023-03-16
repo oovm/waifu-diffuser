@@ -9,13 +9,12 @@ use futures_util::{
     stream::{SplitSink, SplitStream},
     SinkExt, StreamExt,
 };
-use log::*;
 use pyke_diffusers::OrtEnvironment;
 use serde_json::to_string;
 use tokio::{net::TcpStream, sync::Mutex, time::interval};
 use tokio_tungstenite::{accept_async_with_config, WebSocketStream};
 use tungstenite::{protocol::WebSocketConfig, Message};
-use uuid::Uuid;
+use waifu_diffuser_types::Uuid;
 
 use waifu_diffuser_types::{DiffuserError, DiffuserResponse, DiffuserResult, DiffuserTask, DiffuserTaskKind};
 

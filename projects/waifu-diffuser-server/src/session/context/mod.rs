@@ -5,9 +5,9 @@ use waifu_diffuser_types::DiffuserResult;
 use super::*;
 
 impl WaifuDiffuserServer {
-    pub async fn connect(&self, stream: TcpStream, user: Uuid) -> DiffuserResult<WaifuDiffuserSender> {
+    pub async fn connect(&self, stream: TcpStream, user: Uuid, readable: bool) -> DiffuserResult<WaifuDiffuserSender> {
         let peer = stream.peer_addr()?;
-        info!("New web socket connection: {}", peer);
+        log::info!("New web socket connection: {}", peer);
         let config = WebSocketConfig {
             max_send_queue: None,
             max_message_size: Some(64 << 20),
@@ -19,7 +19,7 @@ impl WaifuDiffuserServer {
 
         let session = WaifuDiffuserSession {
             user_id: user,
-            readable: false,
+            readable,
             sender: WaifuDiffuserSender { shared: Arc::new(Mutex::new(sender)) },
             receiver: WaifuDiffuserReceiver { shared: Arc::new(Mutex::new(receiver)) },
         };
