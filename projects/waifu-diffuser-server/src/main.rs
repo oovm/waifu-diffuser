@@ -1,6 +1,5 @@
 use std::{path::Path, str::FromStr};
 
-use log::info;
 use tokio::net::{TcpListener, TcpStream};
 
 use waifu_diffuser::{StableDiffusionWorker, WaifuDiffuserServer};
@@ -10,10 +9,10 @@ pub struct Application {}
 
 #[tokio::main]
 pub async fn main() {
-    env_logger::init();
+    tracing_subscriber::fmt::init();
     let addr = "127.0.0.1:9527";
     let listener = TcpListener::bind(&addr).await.expect("Can't listen");
-    info!("Listening on: {}", addr);
+    tracing::info!("Listening on: {}", addr);
     let models = Path::new(env!("MODEL_DIR")).join("aom-v3.0-safe-fp16");
     tokio::spawn(async move {
         StableDiffusionWorker::instance().load_model(&models).await.expect("failed to load model");

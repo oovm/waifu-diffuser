@@ -7,7 +7,7 @@ use super::*;
 impl WaifuDiffuserServer {
     pub async fn connect(&self, stream: TcpStream, user: Uuid, readable: bool) -> DiffuserResult<WaifuDiffuserSender> {
         let peer = stream.peer_addr()?;
-        log::info!("New web socket connection: {}", peer);
+        tracing::info!("New web socket connection: {}", peer);
         let config = WebSocketConfig {
             max_send_queue: None,
             max_message_size: Some(64 << 20),

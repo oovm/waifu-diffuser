@@ -7,7 +7,7 @@ impl WaifuDiffuserReceiver {
             Ok(mut o) => match o.next().await {
                 Some(Ok(s)) => s,
                 Some(Err(e)) => {
-                    log::error!("{e}");
+                    tracing::error!("{e}");
                     return true;
                 }
                 None => return true,

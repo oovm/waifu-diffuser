@@ -15,12 +15,12 @@ impl WaifuDiffuserSender {
     pub async fn do_ping(&self) {
         let ping = "WaifuDiffuser".as_bytes().to_vec();
         if let Err(e) = self.send(Message::Ping(ping)).await {
-            log::error!("Error sending ping: {}", e)
+            tracing::error!("Error sending ping: {}", e)
         }
     }
     pub async fn do_pong(&self, ping: Vec<u8>) -> bool {
         if let Err(e) = self.send(Message::Pong(ping)).await {
-            log::error!("Error sending pong: {}", e)
+            tracing::error!("Error sending pong: {}", e)
         }
         false
     }
@@ -50,7 +50,7 @@ impl WaifuDiffuserSender {
             }
         };
         if let Err(result) = result {
-            log::error!("{result}",)
+            tracing::error!("{result}",)
         }
     }
 }

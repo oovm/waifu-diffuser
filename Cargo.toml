@@ -2,6 +2,7 @@
 members = ["projects/*"]
 default-members = [
     "projects/waifu-diffuser-types",
+    "projects/waifu-diffuser-server"
 ]
 exclude = [
     "projects/.DS_Store",

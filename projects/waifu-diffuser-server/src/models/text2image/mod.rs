@@ -13,7 +13,7 @@ impl StableDiffusionWorker {
     }
     /// Load model from path.
     pub async fn load_model(&self, config_path: &Path) -> DiffuserResult<()> {
-        log::info!("Loading model from {}", config_path.canonicalize()?.display());
+        tracing::info!("Loading model from {}", config_path.canonicalize()?.display());
         let model = self.load_model_config(config_path).await?;
         // skip reload
         if self.already_loaded(&model).await {
@@ -28,7 +28,7 @@ impl StableDiffusionWorker {
         );
         match loading {
             Ok(o) => {
-                log::info!("Model loaded");
+                tracing::info!("Model loaded");
                 *self.model.lock().await = Some(StableDiffusionInstance { model, worker: Arc::new(o) });
             }
             Err(e) => {
@@ -56,7 +56,7 @@ impl StableDiffusionWorker {
 
 impl StableDiffusionWorker {
     pub fn spawn() -> JoinHandle<()> {
-        log::info!("Stable diffusion worker awake");
+        tracing::info!("Stable diffusion worker awake");
         tokio::spawn(async {
             loop {
                 StableDiffusionWorker::instance().run().await;
